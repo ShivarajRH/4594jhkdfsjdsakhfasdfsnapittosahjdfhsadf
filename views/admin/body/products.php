@@ -39,20 +39,20 @@ view by Tax : <select id="prod_disp_tax">
 <a href="<?=site_url("admin/addproduct")?>">Add new product</a>
 <?php
 $output.='<table class="datagrid datagridsort" width="100%">
-                <thead>
-                <tr class="trheader">
-                    <th><input type="checkbox" class="chk_all"></th>
-                    <th><a class="header" id="th_pname" href="'.REQUEST_URI.'">Product Name</a></th>
-                    <th><a class="header" id="th_mrp" href="'.REQUEST_URI.'">MRP</a></th>
-                    <th><a class="header" id="th_stock" href="'.REQUEST_URI.'">Stock</a></th>
-                    <th><a class="header" id="th_barcode" href="'.REQUEST_URI.'">Barcode</a></th>
-                    <th><a class="header" id="th_brand" href="'.REQUEST_URI.'">Brand</a></th>
-                    <th></th>
-                </tr>
-                </thead>
-                <tbody class="appendtodiv"></tbody>
-                <div class="loading">&nbsp;</div>
-                </table>';
+            <thead>
+            <tr class="trheader">
+                <th><input type="checkbox" class="chk_all"></th>
+                <th><a class="header" id="th_pname" href="'.REQUEST_URI.'">Product Name</a></th>
+                <th><a class="header" id="th_mrp" href="'.REQUEST_URI.'">MRP</a></th>
+                <th><a class="header" id="th_stock" href="'.REQUEST_URI.'">Stock</a></th>
+                <th><a class="header" id="th_barcode" href="'.REQUEST_URI.'">Barcode</a></th>
+                <th><a class="header" id="th_brand" href="'.REQUEST_URI.'">Brand</a></th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody class="appendtodiv"></tbody>
+            <div class="loading">&nbsp;</div>
+            </table>';
 echo $output;
 ?>
 
@@ -72,7 +72,7 @@ echo $output;
 .loading { background-image:url("http://static.snapittoday.com/loading_maroon.gif");  background-repeat: no-repeat; float: left; margin-left: 20px;width: 20px; visibility:hidden; }
 </style>
 <script type="text/javascript">
-    /* START OF SORTING AND PAGINATION */
+    /* START OF SORTING AND PAGINATION BY SDEV*/
     //FIRST RUN
     $(document).ready(function() {
         var url="<?php echo site_url("admin/jx_products"); ?>";
@@ -92,12 +92,9 @@ echo $output;
     });
     
     function change_class(elt) {
-        
         var elt_header=$(".trheader a.header");
-        var num_classes = (elt_header.attr('class').trim().split(" ")).length;
-        
-        print(num_classes);
-        
+        var num_classes = (elt.attr('class').trim().split(" ")).length;
+        //print(num_classes);
         if(num_classes == 1) {
             elt.removeClass("headerSortUp headerSortDown");
         }
@@ -111,9 +108,7 @@ echo $output;
         }
         return true;
     }
-    function print(str) {
-        console.log(str);
-    }
+    function print(str) { console.log(str); }
     function get_jx_url(url_x) {
         url1=url_x.split("//");
         var newstr = url1[1].split("/");
@@ -174,7 +169,7 @@ echo $output;
             return false; 
         });
     }
-    //function success22(data,textStatus, jqXHR) {        alert(data);  }
+    //function success22(data,textStatus, jqXHR) { alert(data);  }
     /* END OF SORTING AND PAGINATION */
 function mark_src(act)
 {

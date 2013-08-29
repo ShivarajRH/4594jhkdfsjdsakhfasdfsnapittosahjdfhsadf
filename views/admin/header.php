@@ -55,7 +55,7 @@
 	//$submenu['paflist'] = array("createpaf"=>"Create PAF","paflist"=>"List all PAF");
 	
 	
-	$submenu['pnh_reports']=array("pnh_gen_statement"=>"Generate Account Statement",'pnh_sales_report'=>"PNH Sales Report","pnh_employee_sales_summary"=>"Employee Sales Summary","pnh_comp_details"=>"Company Details","pnh_exsms_log"=>"PNH SMS Log","export_salesfortally"=>"Export Sales Report - Tally Import","pnh_imei_activation_log"=>'IMEI Activation Log');
+	$submenu['pnh_reports']=array("pnh_gen_statement"=>"Generate Account Statement",'pnh_sales_report'=>"PNH Sales Report","pnh_employee_sales_summary"=>"Employee Sales Summary","pnh_comp_details"=>"Company Details","pnh_exsms_log"=>"PNH SMS Log","pnh_calls_log"=>"PNH Calls Log","export_salesfortally"=>"Export Sales Report - Tally Import","pnh_imei_activation_log"=>'IMEI Activation Log');
 	$submenu['pnh_members']=array("pnh_addmember"=>"Add Member");
 	$submenu['clients']=array("addclient"=>"Add Client");
 	$submenu['client_orders']=array("addclientorder"=>"Add Client Order");

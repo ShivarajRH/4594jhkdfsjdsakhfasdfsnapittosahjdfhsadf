@@ -1,4 +1,5 @@
 <div class="container" style="clear:both;padding-top:10px;">
+    <div align="center" class="scrollup">Scroll to top</div>
 <?php if(!isset($smallheader)){?>
 <div style="clear:both;margin-top:0px;">
 <div class="">
@@ -21,3 +22,13 @@ if(!isset($smalheader)){?>
 background-color:#fff;
 }
 </style>
+<script type="text/javascript">
+    $(document).ready(function(){ 
+        //Smooth scrolling
+        $(window).scroll(function(){
+            if ($(this).scrollTop() > 100) {$('.scrollup').fadeIn();} 
+            else { $('.scrollup').fadeOut(); }
+        });
+         $('.scrollup').click(function(){ $("html, body").animate({ scrollTop: 0 }, 3000); return false; });
+     });
+</script>

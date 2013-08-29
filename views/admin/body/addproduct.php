@@ -1,19 +1,7 @@
 <?php $p=false; if(isset($prod)) $p=$prod;?>
 <div class="container">
 <h2><?=$p?"Edit":"Add new"?> product</h2>
-
- <?php 
-//if(isset($errors)):
-// 		foreach($errors as $error):
-// 			echo "<br>".$error." is empty";
-// 		endforeach;
-// 	endif;
-
-echo validation_errors('<span class="error_strings">','</span><br>'); 
-
-?>
-
-
+<?php  echo validation_errors('<span class="error_strings">','</span><br>'); ?>
 <form name="addproductform" id="addproductform" method="post">
     
     <div id='addproductform_errorloc' class='error_strings'></div>
@@ -61,28 +49,6 @@ echo validation_errors('<span class="error_strings">','</span><br>');
 <tr><td>Remarks <span class="required">*</span>:</td><td><input type="text" name="premarks" value="<?=$p?$p['remarks']:""?>">
     <div id="addproductform_premarks_errorloc"></div></td></tr>
 <tr><td>Is Active :</td><td><input type="checkbox" name="is_active" value="1" <?=$p&&$p['is_active']?"checked":""?>></td></tr>
-<!--
-<tr><td>News Letter :</td><td>
-        <br><input type="checkbox" name="letters" value="daily">Daily<br>
-        <input type="checkbox" name="letters" value="monthly">monthly<br>
-    </td></tr>
-<tr><td>Gender :</td><td>
-        <input type="radio" name="gender" value="male">male<br>
-        <input type="radio" name="gender" value="female">female<br>
-    </td></tr>
-<tr><td>Gender :</td><td>
-        <br>
-        <select name="genderx">
-            <option value="00">Select</option>
-            <option value="male">male</option>
-            <option value="female">female</option>
-        </select>
-        <br>
-    </td></tr>
-<tr><td>PWD :</td><td><input type="password" name="pwd" value=""><br>
-        Confirm PWD :</td><td><input type="password" name="cpwd" value=""><br>
-    </td></tr>-->
-
 <tr><td></td><td><input type="submit" value="<?=$p?"Update":"Add"?> product">
 </table>
 </form>
@@ -118,43 +84,23 @@ echo validation_errors('<span class="error_strings">','</span><br>');
 	frmvalidator.addValidation("prqty","req","Please enter Reorder Qty");
 	frmvalidator.addValidation("premarks","req","Please enter Product Remarks.");
 	//frmvalidator.addValidation("is_active","req","Please check Is Active");
-        
-	/*
-        frmvalidator.addValidation("letters","shouldselchk=daily","Please select news letters");
-        frmvalidator.addValidation("gender","selone","Please select gender");
-        frmvalidator.addValidation("genderx","dontselect=00","Please select genderx");
-        frmvalidator.addValidation("pwd","req","Please enter pwd.");
-        frmvalidator.addValidation("pwd","neelmnt=pname","Password should not same as product name.");
-        frmvalidator.addValidation("cpwd","eqelmnt=pwd","Confirm password is not same as pwd.");
-        */
-        
+  
 </script>
 <script type="text/javascript">
-    function afterValidation() {
-        // Trigger the validations
+    function afterValidation() { // Trigger the validations
         var d= document.addproductform.runvalidation();
-        if(d) {
-            var val=confirm("Are u sure you want to submit the form?");
+        if(d) { var val=confirm("Are u sure you want to submit the form?");
             if(val) {   $("#addproductform_errorloc").html("<p>Form is submitting......</p>"); return true;     }
             else {    return false;      }
         }
-        else {
-            //"Errors"
-            return false;
-        }
-
+        else { return false; }
     }
-    function beforeValidation() {
-        var val=confirm("Are u sure you want to submit the form?");
-        if(val) {
-            // Trigger the validations
+    function beforeValidation() { var val=confirm("Are u sure you want to submit the form?");
+        if(val) { // Trigger the validations
             return document.addproductform.runvalidation();
         }
-        else {
-            return false;
-        }
+        else { return false; }
     }
-       
     document.addproductform.runvalidation = document.addproductform.onsubmit;
     document.addproductform.onsubmit = afterValidation;
 </script>
