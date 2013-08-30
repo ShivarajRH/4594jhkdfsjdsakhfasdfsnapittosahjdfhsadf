@@ -93,19 +93,65 @@ echo $output;
     
     function change_class(elt) {
         var elt_header=$(".trheader a.header");
-        var num_classes = (elt.attr('class').trim().split(" ")).length;
-        //print(num_classes);
+        var num_classes = (elt_header.attr('class').trim().split(" ")).length;
+        print(num_classes+"\n"+elt_header.attr('class'));
         if(num_classes == 1) {
-            elt.removeClass("headerSortUp headerSortDown");
+            //elt_header.removeClass("headerSortUp headerSortDown");
+            
+            if(!elt.hasClass("headerSortUp")) { 
+                elt.removeClass("headerSortDown");
+                elt.addClass("headerSortUp");
+            }
+            else { 
+                elt.removeClass("headerSortUp");  
+                elt.addClass("headerSortDown"); 
+            }
+           
+        } 
+        else if(num_classes == 2) {
+            elt_header.removeClass("headerSortUp headerSortDown");
+            
+            if(!elt.hasClass("headerSortUp")) { 
+                elt.removeClass("headerSortDown");
+                elt.addClass("headerSortUp");
+            }
+            else { 
+                elt.removeClass("headerSortUp");  
+                elt.addClass("headerSortDown"); 
+            }
         }
-        if(!elt.hasClass("headerSortUp")) { 
-            elt.removeClass("headerSortDown");
-            elt.addClass("headerSortUp");
+//        else {
+//            elt_header.removeClass("headerSortUp headerSortDown");
+//            if(!elt.hasClass("headerSortUp")) { 
+//                elt.removeClass("headerSortDown");
+//                elt.addClass("headerSortUp");
+//            }
+//            else { 
+//                elt.removeClass("headerSortUp");  
+//                elt.addClass("headerSortDown"); 
+//            }
+//        }
+        return true;
+    }
+    function change_class_2() {
+        var elt_header=$(".trheader a.header");
+        var num_classes = (elt_header.attr('class').trim().split(" ")).length;
+        print(num_classes+"\n"+elt_header.attr('class'));
+        if(num_classes > 1) {
+            
         }
-        else { 
-            elt.removeClass("headerSortUp");  
-            elt.addClass("headerSortDown"); 
-        }
+//            elt_header.removeClass("headerSortUp headerSortDown");
+           
+//        } else {
+//            if(!elt.hasClass("headerSortUp")) { 
+//                elt.removeClass("headerSortDown");
+//                elt.addClass("headerSortUp");
+//            }
+//            else { 
+//                elt.removeClass("headerSortUp");  
+//                elt.addClass("headerSortDown"); 
+//            }
+//        }
         return true;
     }
     function print(str) { console.log(str); }
@@ -157,13 +203,13 @@ echo $output;
             var issorting=$("table").data("sdata").issorting;
             var idname=$("table").data("sdata").idname;
             var classname=$("table").data("sdata").classname;
-            var firstrun=$("table").data("sdata").firstrun; 
-            var pagination=$("table").data("sdata").pagination; 
-            //var ajax_url=$("table").data("sdata").url;
+//            var firstrun=$("table").data("sdata").firstrun; 
+//            var pagination=$("table").data("sdata").pagination; 
+//            var ajax_url=$("table").data("sdata").url;
 
             var url=get_jx_url(this.href);
             var elt=$(this);
-            change_class(this.href);
+            change_class_2();
             $("table").data("sdata", { issorting : issorting,idname:idname,classname:classname,firstrun:'false',pagination:"true",url:url } ); 
             loadTableData();
             return false; 

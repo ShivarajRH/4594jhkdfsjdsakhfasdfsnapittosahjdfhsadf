@@ -13824,9 +13824,9 @@ class Erp extends Voucher
                             break;
                     }
                 }
-                function json_error_output1($string) {
-                    return "{}";
-                    //return json_encode(array("status"=> "fail","response" => "$string")); 
+                function json_error_show($string) {
+                    echo json_encode(array("status"=> "fail","response" => $string)); 
+                    die();
                 }
 		/**
 		 * Ajax function to load pnh calls log details by type and territory
@@ -13835,957 +13835,87 @@ class Erp extends Voucher
 		 * @param unknown_type $c (Child)
 		 * @param unknown_type $pg (page)
 		 */
-		function jx_getpnh_calls_log($p1,$p2,$c,$pg)
+		function jx_getpnh_calls_log($p1,$p2,$c,$pg=0)
 		{
-                    echo $this->json_error_output1("sadasd");  die();//$p1 $p2 $c $pg
-                    
+                    //$this->json_error_show("$p1,$p2,$c,$pg");
+                    $presql='';
                     $limit = 25;
-                    if($p1=='callsmade ') {
-                        if($p2=='missed_calls') {
-                            $sql=$this->calls_fun1($p1,$p2);
+                    $tbl_total_rows=0;
+                    if($p1=='callsmade') {
+                            if($p2=='all_calls') {
+                                $presql.=' ';
+                                $presql.=$this->calls_fun1($p1,$p2);
+                            }
+                            elseif($p2=='busy_calls') {
+                                $presql.=' and exa.status="busy" ';
+                                $presql.=$this->calls_fun1($p1,$p2);
+                            }
+                            elseif($p2=='attended_calls') {
+                                $presql.=' and exa.status="free" ';
+                                $presql.=$this->calls_fun1($p1,$p2);
+                            }
+                            else $presql=' ';
                             
-                        }
-                        elseif($p2=='attended_calls') {
-                           $sql=$this->calls_fun1($p1,$p2);
-                        }
-                        else $this->json_error_output("Invalid input.");
+                            $presql=" join m_employee_info emp on emp.contact_no = substr(exa.from,2) ".$presql;
+                                        
+                            
                     }
-                    elseif('receivedcalls') {
-                        if($p2=='missed_calls') {
-                            $sql=$this->calls_fun1($p1,$p2);
+                    elseif($p1 == 'receivedcalls') {
+                            if($p2=='all_calls') {
+                                $presql.=' ';
+                                $presql.=$this->calls_fun1($p1,$p2);
+                            }
+                            if($p2=='busy_calls') {
+                                $presql.=' and exa.status="busy" ';
+                                $presql.=$this->calls_fun1($p1,$p2);
+
+                            }
+                            elseif($p2=='attended_calls') {
+                                $presql.=' and exa.status="free" ';
+                                $presql.=$this->calls_fun1($p1,$p2);
+                            }
+                            else $presql.=' ';
                             
-                        }
-                        elseif($p2=='attended_calls') {
-                           $sql=$this->calls_fun1($p1,$p2);
-                        }
-                        else $this->json_error_output("Invalid input.");
-                        
-                    } else  $this->json_error_output("Invalid input.");
+                            $presql=" join m_employee_info emp on emp.contact_no = substr(exa.dialwhomno,2) ".$presql;
+                            
+                    } 
+                    else { 
+                        $this->json_error_show("Invalid input. <br>$p1,$p2,$c,$pg"); }
                     
-			
-			// check if territory is set
-			$cond = $terr_id?' 1 and d.territory_id = "'.$terr_id.'"':'';
-			
-			$cond = $emp_id?' and a.emp_id = "'.$emp_id.'"':'';
-			$cond1 = $emp_id?' and assigned_to = "'.$emp_id.'"':'';
-			// compute total rows 
-			$tbl_total_rows = 0;
-			
-			//prepare output table header
-			$tbl_head = array();
-			$tbl_data = array();
-			
-			// check for type 
-			if($type=='paid')
-			{
-				$sql_total = "SELECT a.emp_id
-							FROM pnh_executive_accounts_log a
-							JOIN m_employee_info b ON b.employee_id=a.emp_id
-							LEFT JOIN king_admin c ON c.id=a.updated_by
-							WHERE a.type ='paid'  $cond 
-							GROUP BY a.id
-								";
-				$tbl_total_rows = $this->db->query($sql_total)->num_rows();
-				
-				$sql = "SELECT a.sender,a.emp_id,a.id AS log_id,b.contact_no,a.msg,a.remarks,a.reciept_status,b.name,b.name AS employee_name,c.name AS updatedby_name,DATE_FORMAT(a.updated_on,'%d/%m/%y %h:%i %p') AS updated_on,DATE_FORMAT(a.logged_on,'%d/%m/%y %h:%i %p') AS logged_on,
-							t.territory_name,e.town_name
-							FROM pnh_executive_accounts_log a
-							JOIN m_employee_info b ON b.employee_id=a.emp_id
-							LEFT JOIN `m_town_territory_link` d ON d.employee_id=a.emp_id
-							LEFT JOIN `pnh_m_territory_info`t ON t.id=d.territory_id
-							LEFT JOIN pnh_towns e ON e.id=d.town_id
-							LEFT JOIN king_admin c ON c.id=a.updated_by
-							WHERE a.type='paid' $cond 
-							GROUP BY a.id
-							ORDER BY a.logged_on DESC
-							limit $pg,$limit 
-							";
-				
-				$log_sms_details_res=$this->db->query($sql);
-			
-				$tbl_head = array('slno'=>'Slno','employee_name'=>'Employee Name','sent_from'=>'Sent From','territory_name'=>'Territory','town_name'=>'Town','msg'=>'Message','loggged_on'=>'LoggedOn');
-				
-				if($log_sms_details_res->num_rows())
-				{
-					foreach($log_sms_details_res->result_array() as $i=>$log_det)
-					{
-						$tbl_data[] = array('slno'=>$i+1,'employee_name'=>anchor('admin/view_employee/'.$log_det['emp_id'],$log_det['name']),'sent_from'=>$log_det['sender'],'territory_name'=>$log_det['territory_name'],'town_name'=>$log_det['town_name'],'msg'=>$log_det['msg'],'loggged_on'=>$log_det['logged_on']);
-					}
-				}
-				
-			}else if($type=='new')
-			{
-				$sql_total = "SELECT a.id AS log_id
-								FROM pnh_executive_accounts_log a
-								JOIN m_employee_info b ON b.employee_id=a.emp_id
-								LEFT JOIN `m_town_territory_link` d ON d.employee_id=a.emp_id
-								LEFT JOIN `pnh_m_territory_info`t ON t.id=d.territory_id
-								LEFT JOIN pnh_towns e ON e.id=d.town_id
-								LEFT JOIN king_admin c ON c.id=a.updated_by
-								WHERE `type`='New'  $cond
-								GROUP BY a.id	";
-								
-				$tbl_total_rows = $this->db->query($sql_total)->num_rows();
-				
-				$sql = "SELECT a.sender, a.emp_id,a.id AS log_id,b.contact_no,a.msg,a.remarks,a.reciept_status,b.name,b.name AS employee_name,c.name AS updatedby_name,DATE_FORMAT(a.updated_on,'%d/%m/%y %h:%i %p') AS updated_on,DATE_FORMAT(a.logged_on,'%d/%m/%y %h:%i %p') AS logged_on,
-							t.territory_name,e.town_name
-							FROM pnh_executive_accounts_log a
-							JOIN m_employee_info b ON b.employee_id=a.emp_id
-							LEFT JOIN king_admin c ON c.id=a.updated_by
-							LEFT JOIN `m_town_territory_link` d ON d.employee_id=a.emp_id
-							LEFT JOIN `pnh_m_territory_info`t ON t.id=d.territory_id
-							LEFT JOIN pnh_towns e ON e.id=d.town_id
-							WHERE `type`='New' $cond
-							GROUP BY a.id
-							ORDER BY a.logged_on DESC 
-							limit $pg,$limit";
-				$log_sms_details_res=$this->db->query($sql);
-				
-				$tbl_head = array('slno'=>'Slno','employee_name'=>'Employee Name','sent_from'=>'Sent From','territory_name'=>'Territory','town_name'=>'Town','msg'=>'Message','loggged_on'=>'LoggedOn');
-				
-				if($log_sms_details_res->num_rows())
-				{
-						foreach($log_sms_details_res->result_array() as $i=>$log_det)
-						{
-							$tbl_data[] = array('slno'=>$i+1,'employee_name'=>anchor('admin/view_employee/'.$log_det['emp_id'],$log_det['name']),'sent_from'=>$log_det['sender'],'msg'=>$log_det['msg'],'territory_name'=>$log_det['territory_name'],'town_name'=>$log_det['town_name'],'loggged_on'=>$log_det['logged_on']);
-						}
-				}
-			}else if($type=='ship')
-			{
-				$sql_total = "SELECT a.id AS log_id
-								FROM pnh_executive_accounts_log a
-								JOIN m_employee_info b ON b.employee_id=a.emp_id
-								LEFT JOIN `m_town_territory_link` d ON d.employee_id=a.emp_id
-								LEFT JOIN `pnh_m_territory_info`t ON t.id=d.territory_id
-								LEFT JOIN pnh_towns e ON e.id=d.town_id
-								LEFT JOIN king_admin c ON c.id=a.updated_by
-								WHERE `type`='ship'  $cond
-								GROUP BY a.id	";
-								
-				$tbl_total_rows = $this->db->query($sql_total)->num_rows();
-				
-				$sql = "SELECT a.sender, a.emp_id,a.id AS log_id,b.contact_no,a.msg,a.remarks,a.reciept_status,b.name,b.name AS employee_name,c.name AS updatedby_name,DATE_FORMAT(a.updated_on,'%d/%m/%y %h:%i %p') AS updated_on,DATE_FORMAT(a.logged_on,'%d/%m/%y %h:%i %p') AS logged_on,
-							t.territory_name,e.town_name
-							FROM pnh_executive_accounts_log a
-							JOIN m_employee_info b ON b.employee_id=a.emp_id
-							LEFT JOIN king_admin c ON c.id=a.updated_by
-							LEFT JOIN `m_town_territory_link` d ON d.employee_id=a.emp_id
-							LEFT JOIN `pnh_m_territory_info`t ON t.id=d.territory_id
-							LEFT JOIN pnh_towns e ON e.id=d.town_id
-							WHERE `type`='ship' $cond
-							GROUP BY a.id
-							ORDER BY a.logged_on DESC 
-							limit $pg,$limit";
-				$log_sms_details_res=$this->db->query($sql);
-				
-				$tbl_head = array('slno'=>'Slno','employee_name'=>'Employee Name','sent_from'=>'Sent From','territory_name'=>'Territory','town_name'=>'Town','msg'=>'Message','loggged_on'=>'LoggedOn');
-				
-				if($log_sms_details_res->num_rows())
-				{
-						foreach($log_sms_details_res->result_array() as $i=>$log_det)
-						{
-							$tbl_data[] = array('slno'=>$i+1,'employee_name'=>anchor('admin/view_employee/'.$log_det['emp_id'],$log_det['name']),'sent_from'=>$log_det['sender'],'msg'=>$log_det['msg'],'territory_name'=>$log_det['territory_name'],'town_name'=>$log_det['town_name'],'loggged_on'=>$log_det['logged_on']);
-						}
-				}
-			}
-			
-			else if($type=='existing')
-			{
-				$sql_total = "SELECT a.id AS log_id
-									FROM pnh_executive_accounts_log a
-									JOIN m_employee_info b ON b.employee_id=a.emp_id
-									LEFT JOIN king_admin c ON c.id=a.updated_by
-									WHERE `type`='New' $cond
-									GROUP BY a.id
-									";
-				$tbl_total_rows = $this->db->query($sql_total)->num_rows();
-				
-				$sql = "SELECT a.sender,a.emp_id,a.id AS log_id,b.contact_no,a.msg,a.remarks,a.reciept_status,b.name,b.name AS employee_name,c.name AS updatedby_name,DATE_FORMAT(a.updated_on,'%d/%m/%y %h:%i %p') AS updated_on,DATE_FORMAT(a.logged_on,'%d/%m/%y %h:%i %p') AS logged_on,
-																t.territory_name,e.town_name
-																FROM pnh_executive_accounts_log a
-																JOIN m_employee_info b ON b.employee_id=a.emp_id
-																LEFT JOIN king_admin c ON c.id=a.updated_by
-																LEFT JOIN `m_town_territory_link` d ON d.employee_id=a.emp_id
-																LEFT JOIN `pnh_m_territory_info`t ON t.id=d.territory_id
-																LEFT JOIN pnh_towns e ON e.id=d.town_id
-																WHERE `type`='existing' $cond
-																GROUP BY a.id
-																ORDER BY a.logged_on DESC 
-																limit $pg,$limit";
-				$log_sms_details_res=$this->db->query($sql);
-				
-				$tbl_head = array('slno'=>'Slno','employee_name'=>'Employee Name','sent_from'=>'Sent From','territory_name'=>'Territory','town_name'=>'Town','msg'=>'Message','loggged_on'=>'LoggedOn');
-				
-				if($log_sms_details_res->num_rows())
-				{
-						foreach($log_sms_details_res->result_array() as $i=>$log_det)
-						{
-							$tbl_data[] = array('slno'=>$i+1,'employee_name'=>anchor('admin/view_employee/'.$log_det['emp_id'],$log_det['name']),'sent_from'=>$log_det['sender'],'territory_name'=>$log_det['territory_name'],'town_name'=>$log_det['town_name'],'msg'=>$log_det['msg'],'loggged_on'=>$log_det['logged_on']);
-						}
-				}
-			}
-			
-			else if($type=='task')
-			{
-				$sql_total = "SELECT a.id AS log_id
-				FROM pnh_task_remarks a
-				JOIN pnh_m_task_info b ON b.ref_no=a.task_id
-				JOIN  m_employee_info d ON d.employee_id=a.emp_id
-				JOIN m_town_territory_link e ON e.employee_id=a.emp_id
-				JOIN pnh_towns f ON f.id=b.asgnd_town_id
-				WHERE 1 $cond
-				GROUP BY a.id
-				";
-				$tbl_total_rows = $this->db->query($sql_total)->num_rows();
-			
-														$sql = "SELECT b.task_type,a.task_id AS ref_id,a.remarks,d.name AS logged_by,DATE_FORMAT(a.logged_on,'%d/%m/%y %h:%i %p') AS logged_on,d.contact_no,f.town_name,t.territory_name,b.id AS task_id,b.comments
-														FROM pnh_task_remarks a
-														JOIN pnh_m_task_info b ON b.ref_no=a.task_id
-														JOIN m_employee_info d ON d.employee_id=a.emp_id
-														JOIN m_town_territory_link e ON e.employee_id=a.emp_id
-														left JOIN pnh_towns f ON f.id=b.asgnd_town_id
-														JOIN pnh_m_territory_info t ON t.id=e.territory_id
-														WHERE 1 $cond
-														GROUP BY a.id
-														ORDER BY a.logged_on DESC
-														limit $pg,$limit";
-				$log_sms_details_res=$this->db->query($sql);
-			
-				$tbl_head = array('slno'=>'Slno','employee_name'=>'Employee Name','msg'=>'Message','loggged_on'=>'LoggedOn');
-			
-				if($log_sms_details_res->num_rows())
-				{
-						foreach($log_sms_details_res->result_array() as $i=>$log_det)
-						{
-								$tbl_data[] = array('slno'=>$i+1,'employee_name'=>anchor('admin/view_employee/'.$log_det['emp_id'],$log_det['name']),'msg'=>$log_det['msg'],'loggged_on'=>$log_det['logged_on']);
-						}
-				}
-			}
-			
-			else if($type=='delivered_invoicesms')
-			{
-				/*$sql_total = "SELECT invoice_no,b.franchise_name,c.name,
-								FROM sms_invoice_log a
-								JOIN pnh_m_franchise_info b ON b.franchise_id=a.fid
-								JOIN m_employee_info c ON c.employee_id=a.emp_id1
-								WHERE `type`=1 $cond 
-								ORDER BY a.logged_on DESC";
-				
-				$tbl_total_rows = $this->db->query($sql_total)->num_rows();
-					
-				$sql = "SELECT a.invoice_no,b.franchise_name,c.name,d.town_name,t.territory_name,DATE_FORMAT(a.logged_on,'%d/%m/%y %h:%i %p') AS logged_on,c.contact_no 
-						FROM sms_invoice_log a
-						JOIN pnh_m_franchise_info b ON b.franchise_id=a.fid
-						JOIN m_employee_info c ON c.employee_id=a.emp_id1
-						LEFT JOIN pnh_towns d ON d.id=b.town_id
-						JOIN pnh_m_territory_info t ON t.id=b.territory_id
-						WHERE `type`=1 $cond
-						GROUP BY a.id
-						ORDER BY a.logged_on DESC
-						limit $pg,$limit";
-				$log_sms_details_res=$this->db->query($sql);*/
-				
-				$sql="select a.emp_id,a.grp_msg as msg,a.created_on as logged_on,a.contact_no,b.name 
-							from pnh_employee_grpsms_log a 
-							join m_employee_info b on b.employee_id=a.emp_id 
-							where b.job_title2=7 and a.type=10 ";
-				if($emp_id)
-					$sql.=' and a.emp_id=? ';
-				
-				$sql.=' order by logged_on desc ';
-				
-				$tbl_total_rows=$this->db->query($sql,$emp_id)->num_rows();
-				
-				$sql.=" limit $pg, $limit";
-				
-				$log_sms_details_res=$this->db->query($sql,$emp_id);
-				
-				$tbl_head = array('slno'=>'Slno','employee_name'=>'Employee Name','msg'=>'Message','loggged_on'=>'LoggedOn');
-					
-				if($log_sms_details_res->num_rows())
-				{
-					foreach($log_sms_details_res->result_array() as $i=>$log_det)
-					{
-						$tbl_data[] = array('slno'=>$i+1,'employee_name'=>anchor('admin/view_employee/'.$log_det['emp_id'],ucwords($log_det['name'])),'msg'=>$log_det['msg'],'loggged_on'=>format_datetime($log_det['logged_on']));
-					}
-				}
-		}
-		
-		else if($type=='returned_invoicesms')
-			{
-				/*$sql_total = "SELECT invoice_no,b.franchise_name,c.name,
-								FROM sms_invoice_log a
-								JOIN pnh_m_franchise_info b ON b.franchise_id=a.fid
-								JOIN m_employee_info c ON c.employee_id=a.emp_id1
-								WHERE `type`=2 $cond 
-								ORDER BY a.logged_on DESC";
-				
-				$tbl_total_rows = $this->db->query($sql_total)->num_rows();
-					
-				$sql = "SELECT invoice_no,b.franchise_name,c.name,d.town_name,t.territory_name,DATE_FORMAT(a.logged_on,'%d/%m/%y %h:%i %p') AS logged_on,c.contact_no 
-						FROM sms_invoice_log a
-						JOIN pnh_m_franchise_info b ON b.franchise_id=a.fid
-						JOIN m_employee_info c ON c.employee_id=a.emp_id1
-						left JOIN pnh_towns d ON d.id=b.town_id
-						JOIN pnh_m_territory_info t ON t.id=b.territory_id
-						WHERE `type`=2  $cond 
-						GROUP BY a.id
-						ORDER BY a.logged_on DESC
-						limit $pg,$limit";
-				$log_sms_details_res=$this->db->query($sql);*/
-					
-				
-				$sql="select a.emp_id,a.contact_no,b.name,a.grp_msg as msg,a.contact_no,a.created_on as logged_on 
-							from pnh_employee_grpsms_log a 
-							join m_employee_info b on b.employee_id=a.emp_id 
-						where a.type=11";
-				
-				if($emp_id)
-					$sql.=' and a.emp_id=? ';
-				
-				$sql.=' order by logged_on desc ';
-				
-				$tbl_total_rows=$this->db->query($sql,$emp_id)->num_rows();
-				
-				$sql.=" limit $pg, $limit";
-				
-				$log_sms_details_res=$this->db->query($sql,$emp_id);
-				
-				$tbl_head = array('slno'=>'Slno','employee_name'=>'Employee Name','msg'=>'Message','loggged_on'=>'LoggedOn');
-			
-				if($log_sms_details_res->num_rows())
-				{
-					foreach($log_sms_details_res->result_array() as $i=>$log_det)
-					{
-					$tbl_data[] = array('slno'=>$i+1,'employee_name'=>anchor('admin/view_employee/'.$log_det['emp_id'],$log_det['name']),'msg'=>$log_det['msg'],'loggged_on'=>$log_det['logged_on']);
-					}
-				}
-			}
-			
-			else if($type=='call')
-			{
-				$sql_total = "SELECT a.franchise_id,a.msg
-								FROM pnh_sms_log a 
-								JOIN pnh_m_franchise_info c ON c.franchise_id=a.franchise_id 
-								left JOIN pnh_towns d ON d.id=c.town_id 
-								JOIN pnh_m_territory_info t ON t.id=c.territory_id 
-								WHERE c.is_suspended=0 AND `type`='CALL' $cond
-								ORDER BY a.created_on DESC ";
-			
-				$tbl_total_rows = $this->db->query($sql_total)->num_rows();
-					
-				$sql = "SELECT a.franchise_id,a.msg,DATE_FORMAT(FROM_UNIXTIME(a.created_on),'%d/%m/%y %h:%i %p') AS created_on,a.sender,c.franchise_name,d.town_name,t.territory_name 
-														FROM pnh_sms_log a 
-														JOIN pnh_m_franchise_info c ON c.franchise_id=a.franchise_id 
-														left JOIN pnh_towns d ON d.id=c.town_id 
-														JOIN pnh_m_territory_info t ON t.id=c.territory_id 
-														WHERE c.is_suspended=0 AND `type`='CALL' $cond
-														ORDER BY a.created_on DESC 
-														limit $pg,$limit";
-				$log_sms_details_res=$this->db->query($sql);
-					
-				$tbl_head = array('slno'=>'Slno','franchise_name'=>'Franchisee Name','territory_name'=>'Territory','town_name'=>'Town','msg'=>'Message','logged_on'=>'LoggedOn');
-					
-				if($log_sms_details_res->num_rows())
-				{
-					foreach($log_sms_details_res->result_array() as $i=>$log_det)
-					{
-						$tbl_data[] = array('slno'=>$i+1,'franchise_name'=>anchor('admin/pnh_franchise/'.$log_det['franchise_id'],$log_det['franchise_name']),'territory_name'=>$log_det['territory_name'],'town_name'=>$log_det['town_name'],'msg'=>$log_det['msg'],'logged_on'=>$log_det['created_on']);
-					}
-				}
-			}
-			
-			else if($type=='offer')
-			{
-				$sql_total = "SELECT a.franchise_id,a.msg
-								FROM pnh_sms_log_sent a
-								JOIN pnh_m_franchise_info c ON c.franchise_id=a.franchise_id
-								LEFT JOIN pnh_towns d ON d.id=c.town_id
-								JOIN pnh_m_territory_info t ON t.id=c.territory_id
-								WHERE c.is_suspended=0 AND `type`='Offer'$cond
-								ORDER BY a.sent_on DESC";
-					
-				$tbl_total_rows = $this->db->query($sql_total)->num_rows();
-					
-				$sql = "SELECT a.franchise_id,a.msg,DATE_FORMAT(FROM_UNIXTIME(a.sent_on),'%d/%m/%y %h:%i %p') AS created_on,c.franchise_name,d.town_name,t.territory_name
-						FROM pnh_sms_log_sent a
-						JOIN pnh_m_franchise_info c ON c.franchise_id=a.franchise_id
-						LEFT JOIN pnh_towns d ON d.id=c.town_id
-						JOIN pnh_m_territory_info t ON t.id=c.territory_id
-						WHERE c.is_suspended=0 AND `type`='Offer' 
-						ORDER BY a.sent_on DESC
-						limit $pg,$limit";
-				$log_sms_details_res=$this->db->query($sql);
-					
-				$tbl_head = array('slno'=>'Slno','franchise_name'=>'Franchisee Name','territory_name'=>'Territory','town_name'=>'Town','msg'=>'Message','sent_on'=>'Sent On');
-					
-				if($log_sms_details_res->num_rows())
-				{
-					foreach($log_sms_details_res->result_array() as $i=>$log_det)
-					{
-						$tbl_data[] = array('slno'=>$i+1,'franchise_name'=>anchor('admin/pnh_franchise/'.$log_det['franchise_id'],$log_det['franchise_name']),'territory_name'=>$log_det['territory_name'],'town_name'=>$log_det['town_name'],'msg'=>$log_det['msg'],'sent_on'=>$log_det['created_on']);
-					}
-				}
-			}
-				
-			
-			elseif($type=='payment_collection')
-			{
-				$sql_total = "SELECT a.emp_id
-								FROM pnh_employee_grpsms_log a
-								JOIN m_employee_info b ON b.employee_id=a.emp_id
-								WHERE `type`=1 $cond
-								GROUP BY a.id
-								";
-				$tbl_total_rows = $this->db->query($sql_total)->num_rows();
-				
-				$sql = "SELECT a.contact_no,a.emp_id,b.name,grp_msg,DATE_FORMAT(a.created_on,'%d/%m/%Y %h:%i %p') AS sent_on,t.territory_name,replace(group_concat(e.town_name),',',' ') as town_name
-						FROM pnh_employee_grpsms_log a
-						JOIN m_employee_info b ON b.employee_id=a.emp_id
-						LEFT JOIN `m_town_territory_link` d ON d.employee_id=a.emp_id
-						LEFT JOIN `pnh_m_territory_info`t ON t.id=d.territory_id
-						LEFT JOIN pnh_towns e ON e.id=d.town_id
-						WHERE `type`=1 $cond
-						group by a.id  
-						order by a.id desc
-						limit $pg,$limit";
-				$log_sms_details_res=$this->db->query($sql);
-				
-				$tbl_head = array('slno'=>'Slno','employee_name'=>'Employee Name','sent_to'=>'Sent To','territory_name'=>'Territory','town_name'=>'Town','msg'=>'Message','loggged_on'=>'LoggedOn');
-				
-				if($log_sms_details_res->num_rows())
-				{
-				foreach($log_sms_details_res->result_array() as $i=>$log_det)
-					{
-					$tbl_data[] = array('slno'=>$i+1,'employee_name'=>anchor('admin/view_employee/'.$log_det['emp_id'],$log_det['name']),'sent_to'=>$log_det['contact_no'],'territory_name'=>$log_det['territory_name'],'town_name'=>$log_det['town_name'],'msg'=>$log_det['grp_msg'],'loggged_on'=>$log_det['sent_on']);
-					}
-				}
-			
-			}
-			
-			elseif($type=='task_remainder')
-			{
-				$sql_total = "SELECT a.emp_id
-							FROM pnh_employee_grpsms_log a
-							JOIN m_employee_info b ON b.employee_id=a.emp_id
-							WHERE `type`=2 $cond
-							GROUP BY a.id
-				";
-				$tbl_total_rows = $this->db->query($sql_total)->num_rows();
-				
-				$sql = "SELECT a.contact_no,a.emp_id,b.name,grp_msg,DATE_FORMAT(a.created_on,'%d/%m/%Y %h:%i %p') AS sent_on
-						FROM pnh_employee_grpsms_log a
-						JOIN m_employee_info b ON b.employee_id=a.emp_id
-						WHERE `type`=2 $cond
-						order by a.id desc
-						limit $pg,$limit";
-				$log_sms_details_res=$this->db->query($sql);
-				
-				$tbl_head = array('slno'=>'Slno','employee_name'=>'Employee Name','sent_to'=>'Sent To','msg'=>'Message','loggged_on'=>'LoggedOn');
-				
-				if($log_sms_details_res->num_rows())
-				{
-						foreach($log_sms_details_res->result_array() as $i=>$log_det)
-					{
-						$tbl_data[] = array('slno'=>$i+1,'employee_name'=>anchor('admin/view_employee/'.$log_det['emp_id'],$log_det['name']),'sent_to'=>$log_det['contact_no'],'msg'=>$log_det['grp_msg'],'loggged_on'=>$log_det['sent_on']);
-					}
-				}
-			}
-			
-			elseif($type=='start_dysmsfran')
-			{
-				$sql_total ="SELECT *
-							FROM `pnh_sms_log_sent`a
-							JOIN `pnh_m_franchise_info`b ON b.franchise_id=a.franchise_id
-							where 1 and a.type = 'CUR_BALANCE' 
-							group by a.id
-							ORDER BY sent_on DESC 
-							";
-				$tbl_total_rows = $this->db->query($sql_total)->num_rows();
-				
-				$sql = "SELECT a.to,msg,a.franchise_id,b.franchise_name,DATE_FORMAT((FROM_UNIXTIME(a.sent_on)),'%d/%m/%Y %h:%i %p') AS sent_on,
-									d.territory_name,c.town_name
-									FROM `pnh_sms_log_sent`a
-									JOIN `pnh_m_franchise_info`b ON b.franchise_id=a.franchise_id
-									JOIN pnh_towns c ON c.id=b.town_id
-									JOIN pnh_m_territory_info d ON d.id=b.territory_id
-									where 1 and a.type = 'CUR_BALANCE' 	
-									ORDER BY a.id DESC
-									limit $pg,$limit";
-				$log_sms_details_res=$this->db->query($sql);
-				
-				$tbl_head = array('slno'=>'Slno','town_name'=>'Town','territory_name'=>'Territory','to'=>'to','franchise_name'=>'Franchisee Name','msg'=>'Message','loggged_on'=>'LoggedOn');
-				
-				if($log_sms_details_res->num_rows())
-				{
-					foreach($log_sms_details_res->result_array() as $i=>$log_det)
-						{
-						$tbl_data[] = array('slno'=>$i+1,'town_name'=>$log_det['town_name'],'territory_name'=>$log_det['territory_name'],'to'=>$log_det['to'],'franchise_name'=>anchor('admin/pnh_franchise/'.$log_det['franchise_id'],$log_det['franchise_name']),'msg'=>$log_det['msg'],'loggged_on'=>$log_det['sent_on']);
-						}
-				}
-				
-			}
-			
-			elseif($type=='daysales_summary')
-			{
-				$sql_total ="SELECT a.emp_id,b.name,grp_msg,DATE_FORMAT(a.created_on,'%d/%m/%Y %h:%i %p') AS sent_on
-							FROM pnh_employee_grpsms_log a
-							JOIN m_employee_info b ON b.employee_id=a.emp_id
-							WHERE `type`=3 $cond
-							group by a.id";
-						
-				$tbl_total_rows = $this->db->query($sql_total)->num_rows();
-			
-				$sql = "SELECT a.contact_no,a.emp_id,b.name,grp_msg,DATE_FORMAT(a.created_on,'%d/%m/%Y %h:%i %p') AS sent_on,e.territory_name,t.town_name
-						FROM pnh_employee_grpsms_log a
-						JOIN m_employee_info b ON b.employee_id=a.emp_id
-						LEFT JOIN m_employee_rolelink c ON c.employee_id=a.emp_id
-						LEFT JOIN m_town_territory_link d ON d.employee_id=c.employee_id
-						RIGHT JOIN `pnh_m_territory_info` e ON e.id=d.territory_id
-						RIGHT JOIN `pnh_towns` t ON t.id=d.town_id
-						WHERE `type`=3 AND c.is_active=1 $cond 
-						GROUP BY a.id 
-						ORDER BY a.id DESC
-						limit $pg,$limit";
-				$log_sms_details_res=$this->db->query($sql);
-			
-				$tbl_head = array('slno'=>'Slno','employee_name'=>'Employee Name','sent_to'=>'Sent To','town_name'=>'Town','territory_name'=>'Territory','msg'=>'Message','loggged_on'=>'LoggedOn');
-			
-				if($log_sms_details_res->num_rows())
-				{
-					foreach($log_sms_details_res->result_array() as $i=>$log_det)
-					{
-						$tbl_data[] = array('slno'=>$i+1,'employee_name'=>anchor('admin/view_employee/'.$log_det['emp_id'],$log_det['name']),'sent_to'=>$log_det['contact_no'],'town_name'=>$log_det['town_name'],'territory_name'=>$log_det['territory_name'],'msg'=>$log_det['grp_msg'],'loggged_on'=>$log_det['sent_on']);
-					}
-				}
-			
-			}
-			
-			elseif($type=='fu_tasks')
-			{
-				$sql_total ="SELECT a.*
-							FROM pnh_m_task_info a
-							JOIN m_employee_info b ON b.employee_id=a.assigned_to
-							JOIN m_employee_info c ON c.employee_id=a.assigned_by
-							JOIN pnh_towns d ON d.id=a.asgnd_town_id
-							WHERE  a.is_active=1 AND on_date>=DATE(NOW()) and a.task_status=1 $cond1";
-			
-				$tbl_total_rows = $this->db->query($sql_total)->num_rows();
-					
-				$sql = "SELECT a.assigned_to,a.id,a.ref_no,task,task_type,DATE_FORMAT(on_date,'%d/%m/%Y') as on_date,DATE_FORMAT(due_date,'%d/%m/%Y') as due_date,asgnd_town_id,assigned_by,c.name AS assigned_byname ,b.name AS assigned_toname,a.task_status,d.town_name
-						FROM pnh_m_task_info a
-						JOIN m_employee_info b ON b.employee_id=a.assigned_to
-						JOIN m_employee_info c ON c.employee_id=a.assigned_by
-						JOIN pnh_towns d ON d.id=a.asgnd_town_id
-						WHERE  a.is_active=1 AND on_date>=DATE(NOW()) and a.task_status=1 $cond1
-			   			order by a.id desc 
-						limit $pg,$limit";
-				$log_sms_details_res=$this->db->query($sql);
-					
-				$tbl_head = array('slno'=>'Slno','tasks'=>'Tasks','assigned_town'=>'Assigned town','on_date'=>'On Date','due_date'=>'Due Date','task_status'=>'Task Status','assigned_by'=>'Assigned By');
-					
-				if($log_sms_details_res->num_rows())
-				{
-					foreach($log_sms_details_res->result_array() as $i=>$log_det)
-					{
-						
-						$tbl_data[] = array('slno'=>$i+1,'tasks'=>anchor('admin/calender#taskview-'.$log_det['id'],$log_det['ref_no']),'assigned_town'=>$log_det['town_name'],'on_date'=>$log_det['on_date'],'due_date'=>$log_det['due_date'],'task_status'=>$this->task_status[$log_det['task_status']],'assigned_by'=>$log_det['assigned_byname']);
-					}
-				}
-					
-			}
-			
-			elseif($type=='completed_tasks')
-			{
-				$sql_total ="SELECT *
-						FROM pnh_m_task_info a
-						JOIN m_employee_info b ON b.employee_id=a.assigned_to
-						JOIN m_employee_info c ON c.employee_id=a.assigned_by
-						JOIN pnh_towns d ON d.id=a.asgnd_town_id
-		   				JOIN m_employee_info e ON e.employee_id=a.completed_by
-						WHERE a.is_active=1 AND (due_date!=DATE(NOW()) AND a.task_status=2) $cond1
-						ORDER BY on_date desc ";
-					
-				$tbl_total_rows = $this->db->query($sql_total)->num_rows();
-					
-				$sql = "SELECT a.ref_no,a.assigned_to,a.id,task,task_type,DATE_FORMAT(on_date,'%d/%m/%Y') AS on_date,DATE_FORMAT(due_date,'%d/%m/%Y') AS due_date,asgnd_town_id,assigned_by,c.name AS assigned_byname ,b.name AS assigned_toname,a.task_status,d.town_name,e.name AS status_updatedby,date_format(completed_on,'%d/%m/%Y')as completed_on
-						FROM pnh_m_task_info a
-						JOIN m_employee_info b ON b.employee_id=a.assigned_to
-						JOIN m_employee_info c ON c.employee_id=a.assigned_by
-						JOIN pnh_towns d ON d.id=a.asgnd_town_id
-		   				JOIN m_employee_info e ON e.employee_id=a.completed_by
-						WHERE a.is_active=1 AND (due_date!=DATE(NOW()) AND a.task_status=2) $cond1
-						ORDER BY on_date desc
-						limit $pg,$limit";
-				$log_sms_details_res=$this->db->query($sql);
-					
-				$tbl_head = array('slno'=>'Slno','tasks'=>'Tasks','assigned_town'=>'Assigned town','on_date'=>'On Date','due_date'=>'Due Date','task_status'=>'Task Status','assigned_by'=>'Assigned By');
-					
-				if($log_sms_details_res->num_rows())
-				{
-					foreach($log_sms_details_res->result_array() as $i=>$log_det)
-					{
-			
-						$tbl_data[] = array('slno'=>$i+1,'tasks'=>anchor('admin/calender#taskview-'.$log_det['id'],$log_det['ref_no']),'assigned_town'=>$log_det['town_name'],'on_date'=>$log_det['on_date'],'due_date'=>$log_det['due_date'],'task_status'=>$this->task_status[$log_det['task_status']],'assigned_by'=>$log_det['assigned_byname']);
-					}
-				}
-					
-			}
-			
-			elseif($type=='closed_tasks')
-			{
-				$sql_total ="SELECT *
-							FROM pnh_m_task_info a
-							JOIN m_employee_info b ON b.employee_id=a.assigned_to
-							JOIN m_employee_info c ON c.employee_id=a.assigned_by
-							JOIN pnh_towns d ON d.id=a.asgnd_town_id
-							JOIN m_employee_info e ON e.employee_id=a.completed_by
-							WHERE a.is_active=1 AND (due_date!=DATE(NOW()) AND a.task_status=3) $cond1
-							ORDER BY on_date desc ";
-					
-				$tbl_total_rows = $this->db->query($sql_total)->num_rows();
-					
-				$sql = "SELECT a.ref_no,a.assigned_to,a.id,task,task_type,DATE_FORMAT(on_date,'%d/%m/%Y') AS on_date,DATE_FORMAT(due_date,'%d/%m/%Y') AS due_date,asgnd_town_id,assigned_by,c.name AS assigned_byname ,b.name AS assigned_toname,a.task_status,d.town_name,e.name AS status_updatedby,date_format(completed_on,'%d/%m/%Y')as completed_on
-						FROM pnh_m_task_info a
-						JOIN m_employee_info b ON b.employee_id=a.assigned_to
-						JOIN m_employee_info c ON c.employee_id=a.assigned_by
-						JOIN pnh_towns d ON d.id=a.asgnd_town_id
-						JOIN m_employee_info e ON e.employee_id=a.completed_by
-						WHERE a.is_active=1 AND (due_date!=DATE(NOW()) AND a.task_status=3) $cond1
-						ORDER BY on_date desc
-						limit $pg,$limit";
-				$log_sms_details_res=$this->db->query($sql);
-					
-				$tbl_head = array('slno'=>'Slno','tasks'=>'Tasks','assigned_town'=>'Assigned town','on_date'=>'On Date','due_date'=>'Due Date','task_status'=>'Task Status','assigned_by'=>'Assigned By');
-					
-				if($log_sms_details_res->num_rows())
-				{
-					foreach($log_sms_details_res->result_array() as $i=>$log_det)
-					{
-							
-						$tbl_data[] = array('slno'=>$i+1,'tasks'=>anchor('admin/calender#taskview-'.$log_det['id'],$log_det['ref_no']),'assigned_town'=>$log_det['town_name'],'on_date'=>$log_det['on_date'],'due_date'=>$log_det['due_date'],'task_status'=>$this->task_status[$log_det['task_status']],'assigned_by'=>$log_det['assigned_byname']);
-					}
-				}
-					
-			}
-			
-			elseif($type=='dinvoicesms_tofran')
-			{
-				$sql_total ="SELECT a.franchise_id,a.msg
-								FROM pnh_sms_log a 
-								JOIN pnh_m_franchise_info c ON c.franchise_id=a.franchise_id 
-								left JOIN pnh_towns d ON d.id=c.town_id 
-								JOIN pnh_m_territory_info t ON t.id=c.territory_id 
-								WHERE c.is_suspended=0 AND `type`='1' $cond
-								ORDER BY a.created_on DESC ";
-					
-				$tbl_total_rows = $this->db->query($sql_total)->num_rows();
-					
-				$sql = "SELECT a.franchise_id,a.msg,DATE_FORMAT(FROM_UNIXTIME(a.created_on),'%d/%m/%y %h:%i %p') AS created_on,a.sender,c.franchise_name,d.town_name,t.territory_name 
-														FROM pnh_sms_log a 
-														JOIN pnh_m_franchise_info c ON c.franchise_id=a.franchise_id 
-														left JOIN pnh_towns d ON d.id=c.town_id 
-														JOIN pnh_m_territory_info t ON t.id=c.territory_id 
-														WHERE c.is_suspended=0 AND `type`='1' $cond
-														ORDER BY a.created_on DESC 
-														limit $pg,$limit";
-				$log_sms_details_res=$this->db->query($sql);
-					
-				$tbl_head = array('slno'=>'Slno','franchise_name'=>'Franchisee Name','territory_name'=>'Territory','town_name'=>'Town','msg'=>'Message','logged_on'=>'LoggedOn');
-					
-				if($log_sms_details_res->num_rows())
-				{
-					foreach($log_sms_details_res->result_array() as $i=>$log_det)
-					{
-						$tbl_data[] = array('slno'=>$i+1,'franchise_name'=>anchor('admin/pnh_franchise/'.$log_det['franchise_id'],$log_det['franchise_name']),'territory_name'=>$log_det['territory_name'],'town_name'=>$log_det['town_name'],'msg'=>$log_det['msg'],'logged_on'=>$log_det['created_on']);
-					}
-				}
-			}
-			
-			elseif($type=='rinvoicesms_tofran')
-			{
-				$sql_total ="SELECT a.franchise_id,a.msg
-				FROM pnh_sms_log a
-				JOIN pnh_m_franchise_info c ON c.franchise_id=a.franchise_id
-				left JOIN pnh_towns d ON d.id=c.town_id
-				JOIN pnh_m_territory_info t ON t.id=c.territory_id
-				WHERE c.is_suspended=0 AND `type`='2' $cond
-				ORDER BY a.created_on DESC ";
-					
-				$tbl_total_rows = $this->db->query($sql_total)->num_rows();
-					
-				$sql = "SELECT a.franchise_id,a.msg,DATE_FORMAT(FROM_UNIXTIME(a.created_on),'%d/%m/%y %h:%i %p') AS created_on,a.sender,c.franchise_name,d.town_name,t.territory_name
-				FROM pnh_sms_log a
-				JOIN pnh_m_franchise_info c ON c.franchise_id=a.franchise_id
-				left JOIN pnh_towns d ON d.id=c.town_id
-				JOIN pnh_m_territory_info t ON t.id=c.territory_id
-				WHERE c.is_suspended=0 AND `type`='2' $cond
-				ORDER BY a.created_on DESC
-				limit $pg,$limit";
-				$log_sms_details_res=$this->db->query($sql);
-					
-				$tbl_head = array('slno'=>'Slno','franchise_name'=>'Franchisee Name','territory_name'=>'Territory','town_name'=>'Town','msg'=>'Message','logged_on'=>'LoggedOn');
-					
-				if($log_sms_details_res->num_rows())
-				{
-					foreach($log_sms_details_res->result_array() as $i=>$log_det)
-					{
-						$tbl_data[] = array('slno'=>$i+1,'franchise_name'=>anchor('admin/pnh_franchise/'.$log_det['franchise_id'],$log_det['franchise_name']),'territory_name'=>$log_det['territory_name'],'town_name'=>$log_det['town_name'],'msg'=>$log_det['msg'],'logged_on'=>$log_det['created_on']);
-					}
-				}
-			}
+                            
+                            $sql_total = "select emp.employee_id,emp.name caller,emp.contact_no,exa.callsid,exa.dialwhomno as towhom,exa.status,exa.created_on as calledtime
+                                    from  t_exotel_agent_status exa ".$presql;
+                           
+                            $tbl_total_rows = $this->db->query($sql_total)->num_rows();
 
-			elseif($type=="emp_bouncesms")
-			{
-				$sql_total = "SELECT a.emp_id
-				FROM pnh_employee_grpsms_log a
-				JOIN m_employee_info b ON b.employee_id=a.emp_id
-				WHERE `type` = 'Bounce' $cond
-				GROUP BY a.id
-				";
-				$tbl_total_rows = $this->db->query($sql_total)->num_rows();
-					
-				$sql = "SELECT a.contact_no,a.emp_id,b.name,grp_msg,DATE_FORMAT(a.created_on,'%d/%m/%Y %h:%i %p') AS sent_on
-				FROM pnh_employee_grpsms_log a
-				JOIN m_employee_info b ON b.employee_id=a.emp_id
-				WHERE `type`= 'Bounce' $cond
-				order by a.id desc
-				limit $pg,$limit";
-				$log_sms_details_res=$this->db->query($sql);
-					
-				$tbl_head = array('slno'=>'Slno','employee_name'=>'Employee Name','sent_to'=>'Sent To','msg'=>'Message','loggged_on'=>'LoggedOn');
-					
-				if($log_sms_details_res->num_rows())
+                            $sql = "select emp.employee_id,emp.name caller,emp.contact_no,exa.callsid,exa.dialwhomno as towhom,exa.status,exa.created_on as calledtime
+                                    from  t_exotel_agent_status exa ".$presql."
+                                    order by calledtime,callsid ASC limit $pg,$limit";
+                            
+                            	
+				$log_calls_details_res=$this->db->query($sql);
+			
+				$tbl_head = array('slno'=>'Slno','employee_id'=>'Employee ID','caller'=>'Caller Name','contact_no'=>'Mobile Num.','callsid'=>'Calls ID','towhom'=>'To Whom','status'=>'Status','calledtime'=>'Called Time');
+				
+				if($log_calls_details_res->num_rows())
 				{
-					foreach($log_sms_details_res->result_array() as $i=>$log_det)
+					foreach($log_calls_details_res->result_array() as $i=>$log_det)
 					{
-						$tbl_data[] = array('slno'=>$i+1,'employee_name'=>anchor('admin/view_employee/'.$log_det['emp_id'],$log_det['name']),'sent_to'=>$log_det['contact_no'],'msg'=>$log_det['grp_msg'],'loggged_on'=>$log_det['sent_on']);
+						$tbl_data[] = array('slno'=>$i+1,
+                                                    'employee_id'=>$log_det['employee_id'],
+                                                    'caller'=> anchor('admin/view_employee/'.$log_det['employee_id'],$log_det['caller']),
+                                                    'contact_no'=>$log_det['contact_no'],
+                                                    'callsid'=>$log_det['callsid'],
+                                                    'towhom'=>$log_det['towhom'],
+                                                    'status'=>$log_det['status'],
+                                                    'calledtime'=>$log_det['calledtime']);
 					}
 				}
-					
-			}
-			elseif($type=='offer_dytoemp')
-			{
-				$sql_total = "SELECT a.emp_id
-				FROM pnh_employee_grpsms_log a
-				JOIN m_employee_info b ON b.employee_id=a.emp_id
-				WHERE `type`='5' $cond
-				GROUP BY a.id
-				";
-				$tbl_total_rows = $this->db->query($sql_total)->num_rows();
-					
-				$sql = "SELECT a.contact_no,a.emp_id,b.name,grp_msg,DATE_FORMAT(a.created_on,'%d/%m/%Y %h:%i %p') AS sent_on
-				FROM pnh_employee_grpsms_log a
-				JOIN m_employee_info b ON b.employee_id=a.emp_id
-				WHERE `type`='5' $cond
-				order by a.id desc
-				limit $pg,$limit";
-				$log_sms_details_res=$this->db->query($sql);
-					
-				$tbl_head = array('slno'=>'Slno','employee_name'=>'Employee Name','sent_to'=>'Sent To','msg'=>'Message','loggged_on'=>'LoggedOn');
-					
-				if($log_sms_details_res->num_rows())
-				{
-					foreach($log_sms_details_res->result_array() as $i=>$log_det)
-					{
-						$tbl_data[] = array('slno'=>$i+1,'employee_name'=>anchor('admin/view_employee/'.$log_det['emp_id'],$log_det['name']),'sent_to'=>$log_det['contact_no'],'msg'=>$log_det['grp_msg'],'loggged_on'=>$log_det['sent_on']);
-					}
-				}
-
-			}
-			elseif($type=="fran_chqbounce")
-			{
-				$sql_total = "SELECT a.franchise_id,a.msg
-								FROM pnh_sms_log_sent a
-								JOIN pnh_m_franchise_info c ON c.franchise_id=a.franchise_id
-								LEFT JOIN pnh_towns d ON d.id=c.town_id
-								JOIN pnh_m_territory_info t ON t.id=c.territory_id
-								WHERE c.is_suspended=0 AND `type`='Bounce'
-								ORDER BY a.sent_on DESC";
-					
-				$tbl_total_rows = $this->db->query($sql_total)->num_rows();
-					
-				$sql = "SELECT a.franchise_id,a.msg,DATE_FORMAT(FROM_UNIXTIME(a.sent_on),'%d/%m/%y %h:%i %p') AS created_on,c.franchise_name,d.town_name,t.territory_name
-						FROM pnh_sms_log_sent a
-						JOIN pnh_m_franchise_info c ON c.franchise_id=a.franchise_id
-						LEFT JOIN pnh_towns d ON d.id=c.town_id
-						JOIN pnh_m_territory_info t ON t.id=c.territory_id
-						WHERE c.is_suspended=0 AND `type`='Bounce'
-						ORDER BY a.sent_on DESC
-						limit $pg,$limit";
-				$log_sms_details_res=$this->db->query($sql);
-					
-				$tbl_head = array('slno'=>'Slno','franchise_name'=>'Franchisee Name','territory_name'=>'Territory','town_name'=>'Town','msg'=>'Message','sent_on'=>'Sent On');
-					
-				if($log_sms_details_res->num_rows())
-				{
-					foreach($log_sms_details_res->result_array() as $i=>$log_det)
-					{
-						$tbl_data[] = array('slno'=>$i+1,'franchise_name'=>anchor('admin/pnh_franchise/'.$log_det['franchise_id'],$log_det['franchise_name']),'territory_name'=>$log_det['territory_name'],'town_name'=>$log_det['town_name'],'msg'=>$log_det['msg'],'sent_on'=>$log_det['created_on']);
-					}
-				}
-
-			}else if($type=='shipmnet_ntfy')
-			{
-				$sql_total="select a.grp_msg as msg,a.emp_id,b.name,c.territory_name,d.town_name,a.created_on  from pnh_employee_grpsms_log a 
-											join m_employee_info b on b.employee_id=a.emp_id
-											left join pnh_m_territory_info c on c.id=a.territory_id
-											left join pnh_towns d on d.id=a.town_id
-										where type=4
-										order by a.created_on desc";
-				$tbl_total_rows = $this->db->query($sql_total)->num_rows();
-				
-				$sql=$sql_total." limit $pg,$limit";
-				
-				$log_sms_details_res=$this->db->query($sql);
-				
-				$tbl_head = array('slno'=>'Slno','name'=>'Employe name','territory_name'=>'Territory','town_name'=>'Town','msg'=>'Message','sent_on'=>'Sent On');
-				
-				if($log_sms_details_res->num_rows())
-				{
-					foreach($log_sms_details_res->result_array() as $i=>$log_det)
-					{
-						$tbl_data[] = array('slno'=>$i+1,'name'=>anchor('admin/view_employee/'.$log_det['emp_id'],$log_det['name']),'territory_name'=>$log_det['territory_name'],'town_name'=>$log_det['town_name'],'msg'=>$log_det['msg'],'sent_on'=>format_datetime($log_det['created_on']));
-					}
-				}
-			}else if($type=='lr_number_updates')
-			{
-				$sql_total="select a.grp_msg as msg,a.emp_id,b.name,c.territory_name,d.town_name,a.created_on  from pnh_employee_grpsms_log a
-								join m_employee_info b on b.employee_id=a.emp_id
-								left join pnh_m_territory_info c on c.id=a.territory_id
-								left join pnh_towns d on d.id=a.town_id
-						where type=6
-						";
-				if($emp_id)
-					$sql_total.=" and a.emp_id=? ";
-					
-				$sql_total.=" order by a.created_on desc ";
-				
-				$tbl_total_rows = $this->db->query($sql_total,$emp_id)->num_rows();
-				
-				$sql=$sql_total." limit $pg,$limit";
-				
-				$log_sms_details_res=$this->db->query($sql,$emp_id);
-				
-				$tbl_head = array('slno'=>'Slno','name'=>'Employe name','msg'=>'Message','sent_on'=>'Sent On');
-				
-				if($log_sms_details_res->num_rows())
-				{
-					foreach($log_sms_details_res->result_array() as $i=>$log_det)
-					{
-						$tbl_data[] = array('slno'=>$i+1,'name'=>anchor('admin/view_employee/'.$log_det['emp_id'],$log_det['name']),'msg'=>$log_det['msg'],'sent_on'=>format_datetime($log_det['created_on']));
-					}
-				}
-			}else if($type=='dr_excu_invsms')
-			{
-				$sql="select a.emp_id,a.grp_msg as msg,a.created_on as logged_on,a.contact_no,b.name from pnh_employee_grpsms_log a join m_employee_info b on b.employee_id=a.emp_id where b.job_title2=7 and a.type=9 ";
-				
-				$tbl_total_rows=$this->db->query($sql)->num_rows();
-				
-				$sql.=" limit $pg, $limit";
-				
-				$log_sms_details_res=$this->db->query($sql);
-				
-				$tbl_head = array('slno'=>'Slno','employee_name'=>'Employee Name','msg'=>'Message','loggged_on'=>'LoggedOn');
-				
-				if($log_sms_details_res->num_rows())
-				{
-					foreach($log_sms_details_res->result_array() as $i=>$log_det)
-					{
-						$tbl_data[] = array('slno'=>$i+1,'employee_name'=>anchor('admin/view_employee/'.$log_det['emp_id'],ucwords($log_det['name'])),'msg'=>$log_det['msg'],'loggged_on'=>format_datetime($log_det['logged_on']));
-					}
-				}
-			}else if($type=='inv_pickup')
-			{
-				$sql="select a.emp_id,a.grp_msg as msg,a.created_on as logged_on,a.contact_no,b.name,c.role_name 
-							from pnh_employee_grpsms_log a 
-							join m_employee_info b on b.employee_id=a.emp_id 
-							join m_employee_roles c on c.role_id= b.job_title2 
-							where (b.job_title2=4 or b.job_title2=5 or b.job_title2=6 ) and a.type=8 ";
-				
-				if($emp_id)
-					$sql.=" and a.emp_id=? ";
-				
-				$sql.=" order by a.created_on desc ";
-				
-				
-				$tbl_total_rows=$this->db->query($sql,$emp_id)->num_rows();
-				
-				$sql.=" limit $pg, $limit";
-				
-				$log_sms_details_res=$this->db->query($sql,$emp_id);
-				
-				$tbl_head = array('slno'=>'Slno','employee_name'=>'Employee Name','msg'=>'Message','loggged_on'=>'LoggedOn','role'=> 'Role');
-				
-				if($log_sms_details_res->num_rows())
-				{
-					foreach($log_sms_details_res->result_array() as $i=>$log_det)
-					{
-						$tbl_data[] = array('slno'=>$i+1,'employee_name'=>anchor('admin/view_employee/'.$log_det['emp_id'],ucwords($log_det['name'])),'msg'=>$log_det['msg'],'loggged_on'=>format_datetime($log_det['logged_on']),'role'=>$log_det['role_name']);
-					}
-				}
-			}else if($type=='inv_handover')
-			{
-				$sql="select a.emp_id,a.grp_msg as msg,a.created_on as logged_on,a.contact_no,b.name,c.role_name 
-							from pnh_employee_grpsms_log a 
-							join m_employee_info b on b.employee_id=a.emp_id 
-							join m_employee_roles c on c.role_id= b.job_title2 
-						where (b.job_title2=4 or b.job_title2=5 or b.job_title2=6 ) and a.type=9 ";
-				
-				if($emp_id)
-					$sql.=" and a.emp_id=? ";
-				
-				$sql.=" order by a.created_on desc ";
-				
-				
-				$tbl_total_rows=$this->db->query($sql,$emp_id)->num_rows();
-				
-				$sql.=" limit $pg, $limit";
-				
-				$log_sms_details_res=$this->db->query($sql,$emp_id);
-				
-				$tbl_head = array('slno'=>'Slno','employee_name'=>'Employee Name','msg'=>'Message','loggged_on'=>'LoggedOn','role'=> 'Role');
-				
-				if($log_sms_details_res->num_rows())
-				{
-					foreach($log_sms_details_res->result_array() as $i=>$log_det)
-					{
-						$tbl_data[] = array('slno'=>$i+1,'employee_name'=>anchor('admin/view_employee/'.$log_det['emp_id'],ucwords($log_det['name'])),'msg'=>$log_det['msg'],'loggged_on'=>format_datetime($log_det['logged_on']),'role'=>$log_det['role_name']);
-					}
-				}
-			}else if($type=='ship_delivered')
-			{
-				$sql="select a.emp_id,a.grp_msg as msg,a.created_on as logged_on,a.contact_no,b.name,c.role_name 
-							from pnh_employee_grpsms_log a 
-							join m_employee_info b on b.employee_id=a.emp_id 
-							join m_employee_roles c on c.role_id= b.job_title2 
-							where (b.job_title2=4 or b.job_title2=5 or b.job_title2=6 ) and a.type=10 ";
-				
-				if($emp_id)
-					$sql.=' and a.emp_id=? ';
-				
-				$sql.=" order by logged_on desc ";
-				
-				$tbl_total_rows=$this->db->query($sql,$emp_id)->num_rows();
-				
-				$sql.=" limit $pg, $limit  ";
-				
-				$log_sms_details_res=$this->db->query($sql,$emp_id);
-				
-				$tbl_head = array('slno'=>'Slno','employee_name'=>'Employee Name','msg'=>'Message','loggged_on'=>'LoggedOn','role'=> 'Role');
-				
-				if($log_sms_details_res->num_rows())
-				{
-					foreach($log_sms_details_res->result_array() as $i=>$log_det)
-					{
-						$tbl_data[] = array('slno'=>$i+1,'employee_name'=>anchor('admin/view_employee/'.$log_det['emp_id'],ucwords($log_det['name'])),'msg'=>$log_det['msg'],'loggged_on'=>format_datetime($log_det['logged_on']),'role'=>$log_det['role_name']);
-					}
-				}
-			}
-				
-			if(count($tbl_data))
-			{
-				$tbl_data_html = '<table cellpadding="5" cellspacing="0" class="datagrid datagridsort">';
+			
+                        //$this->json_error_show(wordwrap($sql,70,'<br>')."<br>$tbl_total_rows<br>$p1,$p2,$c,$pg");
+			if(count($tbl_data)) {
+				$tbl_data_html = '<div class="dash_bar" id="dash_bar" style="cursor: pointer;float: right; margin-right: 52%;">Showing <strong>'.($pg+1).'</strong> to <strong>'.($pg+1*$limit).'</strong> of <strong>'.$tbl_total_rows.'</strong></div>';
+				$tbl_data_html .= '<table cellpadding="5" cellspacing="0" class="datagrid datagridsort">';
 				$tbl_data_html .= '<thead>';
 				foreach($tbl_head as $th)
 					$tbl_data_html .= '<th>'.$th.'</th>';
@@ -14809,27 +13939,32 @@ class Erp extends Voucher
 				}
 				$tbl_data_html .= '</tbody>';
 				$tbl_data_html .= '</table>';
-			}else
-			{
-				$tbl_data_html = '<div align="center"> No data found</div>';
-			}
+			
 		
-			$this->load->library('pagination');
+                                $this->load->library('pagination');
 
-			$config['base_url'] = site_url('admin/jx_getpnh_exsms_log/'.$type.'/'.$terr_id.'/'.$emp_id);
-			$config['total_rows'] = $tbl_total_rows;
-			$config['per_page'] = $limit;
-			$config['uri_segment'] = 6;
-			
-			$this->config->set_item('enable_query_strings',false);
-			$this->pagination->initialize($config);
-			$pagi_links = $this->pagination->create_links();
-			$this->config->set_item('enable_query_strings',true);
-			
-			$pagi_links = '<div class="log_pagination">'.$pagi_links.'</div>';
-			
-			echo json_encode(array('log_data'=>$tbl_data_html,'pagi_links'=>$pagi_links,'type'=>$type,'terr_id'=>$terr_id,'emp_id'=>$emp_id,'pg'=>$pg));
-			
+                                $config['base_url'] = site_url('admin/jx_getpnh_calls_log/'.$p1.'/'.$p2.'/'.$c);
+                                $config['total_rows'] = $tbl_total_rows;
+                                $config['per_page'] = $limit;
+                                $config['uri_segment'] = 6;
+
+                                $this->config->set_item('enable_query_strings',false);
+                                $this->pagination->initialize($config);
+                                $pagi_links = $this->pagination->create_links();
+                                $this->config->set_item('enable_query_strings',true);
+
+                                $pagi_links = '<div class="log_pagination">'.$pagi_links.'</div>';
+                                
+                                echo json_encode(array('status'=>"success",'log_data'=>$tbl_data_html,'tbl_total_rows'=> $tbl_total_rows,'limit'=>(($pg+1)*$limit),'newpg'=>($pg+1),'pagi_links'=>$pagi_links,'p1'=>$p1,'p2'=>$p2,
+                                    'c'=>$c,'pg'=>$pg,'items_info'=>""));
+                                
+                                //'items_info'=>"Showing <strong>".($pg+1)."</strong> to <strong>".($pg+1*$limit).'</strong> of <strong>'.$tbl_total_rows."</strong>"
+                                
+			}
+                        else {
+                                $tbl_data_html = '<div align="center"> No data found</div>';
+                                echo json_encode(array('status'=>"fail",'response'=>$tbl_data_html,'tbl_total_rows'=>$tbl_total_rows,'limit'=>$limit,'pagi_links'=>'','p1'=>'','p2'=>'','c'=>'','pg'=>0,'items_info'=>"Showing <strong>0</strong>"));
+			}
 		}
 
 	

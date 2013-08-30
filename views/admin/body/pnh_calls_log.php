@@ -1,6 +1,8 @@
 <div id="container">
 <h2 class="page_title">PNH Calls Summary</h2>
+
 <div class="tab_view" >
+<!--    <div class="dash_bar" id="dash_bar" style="cursor: pointer;float: right; margin-right: 52%;"></div>-->
     <ul>
         <li><a href="#callsmade">Calls Made</a></li>
         <li><a href="#receivedcalls">Received Calls</a></li>
@@ -8,15 +10,43 @@
     <div id="callsmade">
         <div class="tab_view tab_view_inner">
             <ul>
-                <li><a href="#missed_calls">Missed Calls</a></li>
-                <li><a href="#attended_calls">Attended Calls</a></li>
+                <li><a href="#all_calls">All Calls</a></li>
+                <li><a href="#busy_calls">Busy</a></li>
+                <li><a href="#attended_calls">Attended</a></li>
             </ul>
-            <div id="missed_calls" style="padding:0px !important;">
+            
+            <div id="all_calls" style="padding:0px !important;">
                 <div class="tab_view tab_view_inner">
                 <ul>
-                    <li><a href="#tofranchise" class="trg_onload" onclick="load_callslog_data(this,'callsmade','missed_calls','tofranchise',0)">To Franchise</a></li>
-                    <li><a href="#toexecutive" onclick="load_callslog_data(this,'callsmade','missed_calls','toexecutive',0)">To Executive</a></li>
-                    <li><a href="#tounknown" onclick="load_callslog_data(this,'callsmade','missed_calls','tounknown',0)">To Unknown</a></li>
+                    <li><a href="#tofranchise" class="trg_onload" onclick="load_callslog_data(this,'callsmade','all_calls','tofranchise',0)">To Franchise</a></li>
+                    <li><a href="#toexecutive" onclick="load_callslog_data(this,'callsmade','all_calls','toexecutive',0)">To Executive</a></li>
+                    <li><a href="#tounknown" onclick="load_callslog_data(this,'callsmade','all_calls','tounknown',0)">To Unknown</a></li>
+                </ul>
+                    
+                <div id="tofranchise" >
+                        <h4>To Franchise </h4>
+                        
+                        <div class="tab_content"></div>
+                </div>
+                <div id="toexecutive">
+                    <h4>To Executive</h4>
+                    <div class="tab_content"></div>
+                </div>
+                <div id="tounknown">
+                    <h4>Unknown Calls</h4>
+                    <div class="tab_content"></div>
+                </div>
+
+
+                </div>
+            </div>
+            
+            <div id="busy_calls" style="padding:0px !important;">
+                <div class="tab_view tab_view_inner">
+                <ul>
+                    <li><a href="#tofranchise" class="trg_onload" onclick="load_callslog_data(this,'callsmade','busy_calls','tofranchise',0)">To Franchise</a></li>
+                    <li><a href="#toexecutive" onclick="load_callslog_data(this,'callsmade','busy_calls','toexecutive',0)">To Executive</a></li>
+                    <li><a href="#tounknown" onclick="load_callslog_data(this,'callsmade','busy_calls','tounknown',0)">To Unknown</a></li>
                 </ul>
                 <div id="tofranchise" >
                         <h4>To Franchise </h4> 
@@ -66,15 +96,43 @@
     <div id="receivedcalls">
         <div class="tab_view tab_view_inner">
             <ul>
-                <li><a href="#missed_calls">Missed Calls</a></li>
-                <li><a href="#attended_calls">Attended Calls</a></li>
+                <li><a href="#all_calls">All Calls</a></li>
+                <li><a href="#busy_calls">Busy</a></li>
+                <li><a href="#attended_calls">Attended</a></li>
             </ul>
-            <div id="missed_calls" style="padding:0px !important;">
+             
+            <div id="all_calls" style="padding:0px !important;">
+                <div class="tab_view tab_view_inner">
+                <ul>
+                    <li><a href="#tofranchise" class="trg_onload" onclick="load_callslog_data(this,'receivedcalls','all_calls','tofranchise',0)">To Franchise</a></li>
+                    <li><a href="#toexecutive" onclick="load_callslog_data(this,'receivedcalls','all_calls','toexecutive',0)">To Executive</a></li>
+                    <li><a href="#tounknown" onclick="load_callslog_data(this,'receivedcalls','all_calls','tounknown',0)">To Unknown</a></li>
+                </ul>
+                    
+                <div id="tofranchise" >
+                        <h4>To Franchise </h4>
+                        
+                        <div class="tab_content"></div>
+                </div>
+                <div id="toexecutive">
+                    <h4>To Executive</h4>
+                    <div class="tab_content"></div>
+                </div>
+                <div id="tounknown">
+                    <h4>Unknown Calls</h4>
+                    <div class="tab_content"></div>
+                </div>
+
+
+                </div>
+            </div>
+            
+            <div id="busy_calls" style="padding:0px !important;">
                 <div class="tab_view tab_view_inner">
                     <ul>
-                        <li><a href="#tofranchise" class="trg_onload" onclick="load_callslog_data(this,'receivedcalls','missed_calls','tofranchise',0)">To Franchise</a></li>
-                        <li><a href="#toexecutive" onclick="load_callslog_data(this,'receivedcalls','missed_calls','toexecutive',0)">To Executive</a></li>
-                        <li><a href="#tounknown" onclick="load_callslog_data(this,'receivedcalls','missed_calls','tounknown',0)">To Unknown</a></li>
+                        <li><a href="#tofranchise" class="trg_onload" onclick="load_callslog_data(this,'receivedcalls','busy_calls','tofranchise',0)">To Franchise</a></li>
+                        <li><a href="#toexecutive" onclick="load_callslog_data(this,'receivedcalls','busy_calls','toexecutive',0)">To Executive</a></li>
+                        <li><a href="#tounknown" onclick="load_callslog_data(this,'receivedcalls','busy_calls','tounknown',0)">To Unknown</a></li>
                     </ul>
                     <div id="tofranchise">
                         <h4>To Franchise</h4>
@@ -124,50 +182,61 @@
 
 <script>
     function print(str) { console.log("= "+str+" ="); }
-	function show_log()
-	{
+    function print_obj(resp) { for(var key in resp) {print('' + key + ' => ' + resp[key]+ '\n');} }
+	function show_log() {
 		location.href = site_url+'/admin/pnh_exsms_log/'+$('#inp_date').val();
 	}
-		
-	function  load_callslog_data(ele,p1,p2,c,pg)
-	{
+	
+	function  load_callslog_data(ele,p1,p2,c,pg){
             var scrolldiv= "#"+p1+" #"+p2+" "+$(ele).attr('href')+' div.tab_content';
             $(scrolldiv).html('<div align="center"><img src="'+base_url+'/images/jx_loading.gif'+'"></div>');
             var posturl=site_url+'admin/jx_getpnh_calls_log/'+p1+'/'+p2+'/'+c+"/"+pg;
-            print(posturl);
-            $.post(posturl,'',function(resp){ //print(resp.Hi);
-                    $(scrolldiv).html(resp.Hi);//resp.log_data+resp.pagi_links);
-                    //$(scrolldiv+' .datagridsort').tablesorter();
+            var items_info=$("#dash_bar");
+            
+            $.post(posturl,'',function(resp){ 
+                print_obj(resp);
+                if(resp.status=='fail') {
+//                    $("#dash_bar").html(resp.items_info);
+                    $(scrolldiv).html("<br>"+resp.response);//resp.status
+                }    
+                else if(resp.status=='success') {
+//                    items_info.html(resp.items_info);
+                    $(scrolldiv).html(resp.log_data+resp.pagi_links);
+                    $(scrolldiv+' .datagridsort').tablesorter();
+                    return false;
+                }
             },'json')
             .done(done)
             .fail(fail);
 	}
-        function success1(resp) { //print(resp.Hi);
-                    $(scrolldiv).html(resp.log_data+resp.pagi_links);
-                    $(scrolldiv+' .datagridsort').tablesorter();
-            }
-	function done(data) { }
+        function done(data) { }
 	function fail(xhr,status) { print(xhr.responseText+" "+xhr+" | "+status);
             //.toSource()
         }
 	$('#inp_date').datepicker();
-	$("#logdet_disp_terry").change(function(){
-		load_callslog_data(loaded_logele,loaded_logtype,0,$(this).val()*1);
-	});
-
+	
 	$('.tab_view').tabs();
 	$('.datagridsort').tablesorter( {sortList: [[0,0]]} );
 
 	$('.log_pagination a').live('click',function(e){
 		e.preventDefault();
 		$.post($(this).attr('href'),'',function(resp){
-			$('#'+resp.type+' div.tab_content').html(resp.log_data+resp.pagi_links);
-			$('#'+resp.type+' div.tab_content .datagridsort').tablesorter();
-		},'json');
+                var scrolldiv= "#"+resp.p1+" #"+resp.p2+" #"+resp.c+' div.tab_content';
+                
+                if(resp.status=='fail') {
+//                    $("#dash_bar").html(resp.items_info);
+                    $(scrolldiv).html("<br>"+resp.response);//resp.status
+                }    
+                else if(resp.status=='success') {
+                    $(scrolldiv).html(resp.log_data+resp.pagi_links);
+//                    $("#dash_bar").html(resp.items_info);
+//                    $(".dash_bar").html("Showing <strong>"+parseInt(resp.newpg)+"</strong> to <strong>"+parseInt(resp.limit)+'</strong> of <strong>'+parseInt(resp.tbl_total_rows)+"</strong>");
+                    $(scrolldiv+' .datagridsort').tablesorter();
+                }
+                return false;
+        },'json');
 	});
 	
 	$('.trg_onload').trigger('click');
-
-	$("#logdet_disp_terry").chosen();	
 
 </script>
