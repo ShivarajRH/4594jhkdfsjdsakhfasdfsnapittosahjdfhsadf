@@ -25,6 +25,7 @@
 	$min_assets['js'][] = '../js/erp.js';
 	$min_assets['js'][] = '../js/gen_validatorv4.js';
 	$min_assets['js'][] = '../js/jquery.tablesorter.js';
+	$min_assets['js'][] = '../js/jquery.print-objects.js';
         
 	$min_assets['css'][] = '../css/jquery-ui-lib/jquery-ui-1.10.2.custom.min.css';
 	$min_assets['css'][] = '../css/chosen.css';

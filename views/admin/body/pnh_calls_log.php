@@ -1,6 +1,5 @@
 <div id="container">
 <h2 class="page_title">PNH Calls Summary</h2>
-
 <div class="tab_view" >
 <!--    <div class="dash_bar" id="dash_bar" style="cursor: pointer;float: right; margin-right: 52%;"></div>-->
     <ul>
@@ -179,22 +178,29 @@
 </div>
 
 </div>
-
+<style type="text/css">
+.dash_bar {   cursor: pointer;float: left; margin-top:-2%; margin-right: 0; margin-bottom: 0;  margin-left:37%; position:relative; }
+</style>
 <script>
-    function print(str) { console.log("= "+str+" ="); }
-    function print_obj(resp) { for(var key in resp) {print('' + key + ' => ' + resp[key]+ '\n');} }
-	function show_log() {
-		location.href = site_url+'/admin/pnh_exsms_log/'+$('#inp_date').val();
-	}
+//	function show_log() {
+//		location.href = site_url+'/admin/jx_getpnh_calls_log/'+$('#inp_date').val();
+//	}
 	
-	function  load_callslog_data(ele,p1,p2,c,pg){
+	function  load_callslog_data(ele,p1,p2,c,pg) {
             var scrolldiv= "#"+p1+" #"+p2+" "+$(ele).attr('href')+' div.tab_content';
-            $(scrolldiv).html('<div align="center"><img src="'+base_url+'/images/jx_loading.gif'+'"></div>');
+            //$("div.tab_content").html('<div align="center"><img src="'+base_url+'/images/jx_loading.gif'+'"></div>');
             var posturl=site_url+'admin/jx_getpnh_calls_log/'+p1+'/'+p2+'/'+c+"/"+pg;
             var items_info=$("#dash_bar");
             
+            
+              $("div.tab_content").html('<div class="loading">&nbsp;</div>');
+              var loading=$(".loading");  loading.css({"visibility":"visible"});
+                
+            
             $.post(posturl,'',function(resp){ 
-                print_obj(resp);
+                //print(resp);return false;
+                $(scrolldiv).print(resp); //or print_r(obj);return false;
+                
                 if(resp.status=='fail') {
 //                    $("#dash_bar").html(resp.items_info);
                     $(scrolldiv).html("<br>"+resp.response);//resp.status
@@ -220,22 +226,33 @@
 
 	$('.log_pagination a').live('click',function(e){
 		e.preventDefault();
-		$.post($(this).attr('href'),'',function(resp){
-                var scrolldiv= "#"+resp.p1+" #"+resp.p2+" #"+resp.c+' div.tab_content';
                 
-                if(resp.status=='fail') {
-//                    $("#dash_bar").html(resp.items_info);
-                    $(scrolldiv).html("<br>"+resp.response);//resp.status
-                }    
-                else if(resp.status=='success') {
-                    $(scrolldiv).html(resp.log_data+resp.pagi_links);
-//                    $("#dash_bar").html(resp.items_info);
-//                    $(".dash_bar").html("Showing <strong>"+parseInt(resp.newpg)+"</strong> to <strong>"+parseInt(resp.limit)+'</strong> of <strong>'+parseInt(resp.tbl_total_rows)+"</strong>");
-                    $(scrolldiv+' .datagridsort').tablesorter();
-                }
-                return false;
-        },'json');
-	});
+                $("div.tab_content").html('<div class="loading">&nbsp;</div>');
+                var loading=$(".loading");  loading.css({"visibility":"visible"});
+                
+		$.post($(this).attr('href'),'',function(resp){
+                        var scrolldiv= "#"+resp.p1+" #"+resp.p2+" #"+resp.c+' div.tab_content';
+
+                        if(resp.status=='fail') {
+                                    $(scrolldiv).html("<br>"+resp.response);//resp.status
+                        }    
+                        else if(resp.status=='success') {
+                            //$(scrolldiv).html(resp.log_data+resp.pagi_links);
+                            $(scrolldiv).html(resp.log_data+resp.pagi_links);
+                            
+        //                    $("#dash_bar").html(resp.items_info);
+        //                    $(".dash_bar").html("Showing <strong>"+parseInt(resp.newpg)+"</strong> to <strong>"+parseInt(resp.limit)+'</strong> of <strong>'+parseInt(resp.tbl_total_rows)+"</strong>");
+                            $(scrolldiv+' .datagridsort').tablesorter();
+                        }
+                        //$(scrolldiv).append('<div class="loading">&nbsp;</div>');
+                        return false;
+                },'json')
+                .done(function() {
+                     //print(loading.text());
+                     //loading.html("Bye");
+                    //loading.css({"visibility":"hidden"});
+                });
+            });
 	
 	$('.trg_onload').trigger('click');
 

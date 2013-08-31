@@ -13812,17 +13812,46 @@ class Erp extends Voucher
 			$data['pg']=$pg;
 			$this->load->view("admin",$data);
 		}
-		function calls_fun1($p1,$p2) {
-                    switch($c) {
-                        case 'tofranchise': $sql='';
-                            break;
-                        case 'toexecutive': $sql='';
-                            break;
-                        case 'tounknown': $sql='';
-                            break;
-                        default:$rdata="Invalid input.";
-                            break;
+		function calls_fun1($p1,$p2,$c) {
+                    if($p1=='callsmade') {
+                            switch($c) {
+                                case 'tofranchise': $sql='select frn.franchise_id callerid,frn.franchise_name callername,exa.from mobile,exa.callsid,exa.dialwhomno as towhom,exa.status,exa.created_on as calledtime from t_exotel_agent_status exa 
+join pnh_m_franchise_info frn on frn.login_mobile1 = substr(exa.from,2) ';
+                                    break;
+                                case 'toexecutive': $sql='select emp.employee_id callerid,emp.name callername,exa.from mobile,exa.callsid,exa.dialwhomno as towhom,exa.status,exa.created_on as calledtime from t_exotel_agent_status exa 
+join m_employee_info emp on emp.contact_no = substr(exa.from,2) ';
+                                    break;
+                                case 'tounknown': $sql='select emp.employee_id callerid,emp.name callername,exa.from mobile,exa.callsid,exa.dialwhomno as towhom,exa.status,exa.created_on as calledtime from t_exotel_agent_status exa
+LEFT join m_employee_info emp on emp.contact_no = substr(exa.from,2)
+LEFT join pnh_m_franchise_info frn on frn.login_mobile1 = substr(exa.from,2)
+WHERE emp.employee_id IS NULL and emp.name IS NULL ';
+                                    break;
+                                default:$this->json_error_show("Invalid input. <br>$p1,$p2,$c,$pg");
+                                    break;
+                            }
+                            return $sql;
                     }
+                    elseif($p1=='receivedcalls') {
+                            switch($c) {
+                                case 'tofranchise': $sql='select frn.franchise_id callerid,frn.franchise_name callername,exa.from mobile,exa.callsid,exa.dialwhomno as towhom,exa.status,exa.created_on as calledtime from t_exotel_agent_status exa 
+join pnh_m_franchise_info frn on frn.login_mobile1 = substr(exa.dialwhomno,2) ';
+                                    break;
+                                case 'toexecutive': $sql='select emp.employee_id callerid,emp.name callername,exa.from mobile,exa.callsid,exa.dialwhomno as towhom,exa.status,exa.created_on as calledtime from t_exotel_agent_status exa 
+join m_employee_info emp on emp.contact_no = substr(exa.dialwhomno,2) ';
+                                    break;
+                                case 'tounknown': $sql='select emp.employee_id callerid,emp.name callername,exa.from mobile,exa.callsid,exa.dialwhomno as towhom,exa.status,exa.created_on as calledtime from t_exotel_agent_status exa
+LEFT join m_employee_info emp on emp.contact_no = substr(exa.dialwhomno,2)
+LEFT join pnh_m_franchise_info frn on frn.login_mobile1 = substr(exa.dialwhomno,2)
+WHERE emp.employee_id IS NULL OR emp.name IS NULL ';
+                                    break;
+                                default:$this->json_error_show("Invalid input. <br>$p1,$p2,$c,$pg");
+                                    break;
+                            }
+                    }
+                    else {
+                        $this->json_error_show("1. Invalid input. <br>$p1,$p2,$c,$pg");
+                    }
+                    return $sql;
                 }
                 function json_error_show($string) {
                     echo json_encode(array("status"=> "fail","response" => $string)); 
@@ -13841,70 +13870,100 @@ class Erp extends Voucher
                     $presql='';
                     $limit = 25;
                     $tbl_total_rows=0;
-                    if($p1=='callsmade') {
+//                    if($p1=='callsmade') {
+                            //$presql=" join m_employee_info emp on emp.contact_no = substr(exa.from,2) ".$presql;
+                            
+                            $presql.=$this->calls_fun1($p1,$p2,$c);
                             if($p2=='all_calls') {
                                 $presql.=' ';
-                                $presql.=$this->calls_fun1($p1,$p2);
+                                
                             }
                             elseif($p2=='busy_calls') {
                                 $presql.=' and exa.status="busy" ';
-                                $presql.=$this->calls_fun1($p1,$p2);
+                                
                             }
                             elseif($p2=='attended_calls') {
                                 $presql.=' and exa.status="free" ';
-                                $presql.=$this->calls_fun1($p1,$p2);
+                                
                             }
-                            else $presql=' ';
+                            else $this->json_error_show("2. Invalid input. <br>$p1,$p2,$c,$pg");
                             
-                            $presql=" join m_employee_info emp on emp.contact_no = substr(exa.from,2) ".$presql;
-                                        
+                            $sql_total = $presql;
                             
-                    }
-                    elseif($p1 == 'receivedcalls') {
-                            if($p2=='all_calls') {
-                                $presql.=' ';
-                                $presql.=$this->calls_fun1($p1,$p2);
-                            }
-                            if($p2=='busy_calls') {
-                                $presql.=' and exa.status="busy" ';
-                                $presql.=$this->calls_fun1($p1,$p2);
-
-                            }
-                            elseif($p2=='attended_calls') {
-                                $presql.=' and exa.status="free" ';
-                                $presql.=$this->calls_fun1($p1,$p2);
-                            }
-                            else $presql.=' ';
+                            //$this->json_error_show("$sql_total");
                             
-                            $presql=" join m_employee_info emp on emp.contact_no = substr(exa.dialwhomno,2) ".$presql;
-                            
-                    } 
-                    else { 
-                        $this->json_error_show("Invalid input. <br>$p1,$p2,$c,$pg"); }
-                    
-                            
-                            $sql_total = "select emp.employee_id,emp.name caller,emp.contact_no,exa.callsid,exa.dialwhomno as towhom,exa.status,exa.created_on as calledtime
-                                    from  t_exotel_agent_status exa ".$presql;
-                           
+                            /*echo 'SELECT * FROM 
+                                (
+                                (
+                                select exa.from mobile,exa.callsid,exa.dialwhomno as towhom,exa.status,exa.created_on as calledtime from t_exotel_agent_status exa 
+                                WHERE substr(exa.dialwhomno,2) NOT LIKE "%(SELECT emp.contact_no mobile FROM m_employee_info emp)"
+                                )
+                                UNION
+                                (
+                                select exa.from mobile,exa.callsid,exa.dialwhomno as towhom,exa.status,exa.created_on as calledtime from t_exotel_agent_status exa 
+                                WHERE substr(exa.from,2) NOT IN (SELECT frn.login_mobile1 mobile FROM pnh_m_franchise_info frn)
+                                )
+                                ) as b';*/
+                                    
                             $tbl_total_rows = $this->db->query($sql_total)->num_rows();
 
-                            $sql = "select emp.employee_id,emp.name caller,emp.contact_no,exa.callsid,exa.dialwhomno as towhom,exa.status,exa.created_on as calledtime
-                                    from  t_exotel_agent_status exa ".$presql."
-                                    order by calledtime,callsid ASC limit $pg,$limit";
+                            $sql = $sql_total." order by calledtime DESC limit $pg,$limit";
+                            
+                       
+                        
+//                    }//                    elseif($p1 == 'receivedcalls') {
+//                           // $presql=" join m_employee_info emp on emp.contact_no = substr(exa.dialwhomno,2) ".$presql;
+//                            
+//                            if($p2=='all_calls') {
+//                                $presql.=' ';
+//                                $presql.=$this->calls_fun1($p1,$p2);
+//                            }
+//                            if($p2=='busy_calls') {
+//                                $presql.=' and exa.status="busy" ';
+//                                $presql.=$this->calls_fun1($p1,$p2);
+//
+//                            }
+//                            elseif($p2=='attended_calls') {
+//                                $presql.=' and exa.status="free" ';
+//                                $presql.=$this->calls_fun1($p1,$p2);
+//                            }
+//                            else $presql.=' ';
+//                            
+//                            $sql_total = "select emp.employee_id,emp.name caller,emp.contact_no,exa.callsid,exa.dialwhomno as towhom,exa.status,exa.created_on as calledtime
+//                                    from  t_exotel_agent_status exa ".$presql;
+//                           
+//                            $tbl_total_rows = $this->db->query($sql_total)->num_rows();
+//
+//                            $sql = "select emp.employee_id,emp.name caller,emp.contact_no,exa.callsid,exa.dialwhomno as towhom,exa.status,exa.created_on as calledtime
+//                                    from  t_exotel_agent_status exa ".$presql."
+//                                    order by calledtime,callsid ASC limit $pg,$limit";
+//                            
+//                    } 
+//                    else { $this->json_error_show("Invalid input. <br>$p1,$p2,$c,$pg"); }
+//                    
+                            
+//                            $sql_total = "select emp.employee_id,emp.name caller,emp.contact_no,exa.callsid,exa.dialwhomno as towhom,exa.status,exa.created_on as calledtime
+//                                    from  t_exotel_agent_status exa ".$presql;
+//                           
+//                            $tbl_total_rows = $this->db->query($sql_total)->num_rows();
+//
+//                            $sql = "select emp.employee_id,emp.name caller,emp.contact_no,exa.callsid,exa.dialwhomno as towhom,exa.status,exa.created_on as calledtime
+//                                    from  t_exotel_agent_status exa ".$presql."
+//                                    order by calledtime,callsid ASC limit $pg,$limit";
                             
                             	
 				$log_calls_details_res=$this->db->query($sql);
 			
-				$tbl_head = array('slno'=>'Slno','employee_id'=>'Employee ID','caller'=>'Caller Name','contact_no'=>'Mobile Num.','callsid'=>'Calls ID','towhom'=>'To Whom','status'=>'Status','calledtime'=>'Called Time');
+				$tbl_head = array('slno'=>'Slno','callerid'=>'Caller ID','callername'=>'Caller Name','mobile'=>'Mobile Num.','callsid'=>'Calls ID','towhom'=>'To Whom','status'=>'Status','calledtime'=>'Called Time');
 				
 				if($log_calls_details_res->num_rows())
 				{
 					foreach($log_calls_details_res->result_array() as $i=>$log_det)
 					{
 						$tbl_data[] = array('slno'=>$i+1,
-                                                    'employee_id'=>$log_det['employee_id'],
-                                                    'caller'=> anchor('admin/view_employee/'.$log_det['employee_id'],$log_det['caller']),
-                                                    'contact_no'=>$log_det['contact_no'],
+                                                    'callerid'=>$log_det['callerid'],
+                                                    'callername'=> ($log_det['callername']!='') ? anchor('admin/view_employee/'.$log_det['callerid'],$log_det['callername']) : '',
+                                                    'mobile'=>$log_det['mobile'],
                                                     'callsid'=>$log_det['callsid'],
                                                     'towhom'=>$log_det['towhom'],
                                                     'status'=>$log_det['status'],
@@ -13914,7 +13973,7 @@ class Erp extends Voucher
 			
                         //$this->json_error_show(wordwrap($sql,70,'<br>')."<br>$tbl_total_rows<br>$p1,$p2,$c,$pg");
 			if(count($tbl_data)) {
-				$tbl_data_html = '<div class="dash_bar" id="dash_bar" style="cursor: pointer;float: right; margin-right: 52%;">Showing <strong>'.($pg+1).'</strong> to <strong>'.($pg+1*$limit).'</strong> of <strong>'.$tbl_total_rows.'</strong></div>';
+				$tbl_data_html = '<div class="dash_bar" id="dash_bar">Showing <strong>'.($pg+1).'</strong> to <strong>'.($pg+1*$limit).'</strong> of <strong>'.$tbl_total_rows.'</strong></div>';
 				$tbl_data_html .= '<table cellpadding="5" cellspacing="0" class="datagrid datagridsort">';
 				$tbl_data_html .= '<thead>';
 				foreach($tbl_head as $th)
@@ -13953,12 +14012,11 @@ class Erp extends Voucher
                                 $pagi_links = $this->pagination->create_links();
                                 $this->config->set_item('enable_query_strings',true);
 
-                                $pagi_links = '<div class="log_pagination">'.$pagi_links.'</div>';
+                                $pagi_links = '<div class="log_pagination">'.$pagi_links.'</div>
+                                                    ';
                                 
                                 echo json_encode(array('status'=>"success",'log_data'=>$tbl_data_html,'tbl_total_rows'=> $tbl_total_rows,'limit'=>(($pg+1)*$limit),'newpg'=>($pg+1),'pagi_links'=>$pagi_links,'p1'=>$p1,'p2'=>$p2,
                                     'c'=>$c,'pg'=>$pg,'items_info'=>""));
-                                
-                                //'items_info'=>"Showing <strong>".($pg+1)."</strong> to <strong>".($pg+1*$limit).'</strong> of <strong>'.$tbl_total_rows."</strong>"
                                 
 			}
                         else {

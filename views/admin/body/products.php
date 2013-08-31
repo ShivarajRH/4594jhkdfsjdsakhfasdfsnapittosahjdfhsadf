@@ -51,7 +51,7 @@ $output.='<table class="datagrid datagridsort" width="100%">
             </tr>
             </thead>
             <tbody class="appendtodiv"></tbody>
-            <div class="loading">&nbsp;</div>
+            <!--<div class="loading">&nbsp;</div>-->
             </table>';
 echo $output;
 ?>
@@ -69,7 +69,7 @@ echo $output;
 /* new */
 .trheader a { text-decoration: none; width: 100%;    }
 .link { float: left; }
-.loading { background-image:url("http://static.snapittoday.com/loading_maroon.gif");  background-repeat: no-repeat; float: left; margin-left: 20px;width: 20px; visibility:hidden; }
+
 </style>
 <script type="text/javascript">
     /* START OF SORTING AND PAGINATION BY SDEV*/
@@ -164,7 +164,10 @@ echo $output;
         return url;
     }
     function loadTableData() {
-        var loading=$(".loading");loading.css({"visibility":"visible"});
+        
+        $(".appendtodiv").html('<div class="loading">&nbsp;</div>');
+        var loading=$(".loading");  loading.css({"visibility":"visible"});
+              
         var issorting=$("table").data("sdata").issorting;
         var idname=$("table").data("sdata").idname;
         var classname=$("table").data("sdata").classname;
