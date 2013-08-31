@@ -20,7 +20,7 @@ SELECT * FROM
 (
 (
 select exa.from mobile,exa.callsid,exa.dialwhomno as towhom,exa.status,exa.created_on as calledtime from t_exotel_agent_status exa 
-WHERE substr(exa.dialwhomno,2) NOT LIKE '%(SELECT emp.contact_no mobile FROM m_employee_info emp)'
+WHERE substr(exa.dialwhomno,2) NOT IN (SELECT emp.contact_no mobile FROM m_employee_info emp)
 )
 UNION
 (
@@ -40,9 +40,9 @@ SELECT * FROM
 (
 select exa.from mobile,exa.callsid,exa.dialwhomno as towhom,exa.status,exa.created_on as calledtime from t_exotel_agent_status exa 
 JOIN m_employee_info emp ON 
-WHERE substr(exa.from,2) NOT LIKE '%(SELECT emp.contact_no mobile FROM m_employee_info emp)'
+WHERE substr(exa.from,2) NOT IN (SELECT emp.contact_no mobile FROM m_employee_info emp)
 )
-UNION
+AND
 (
 select exa.from mobile,exa.callsid,exa.dialwhomno as towhom,exa.status,exa.created_on as calledtime from t_exotel_agent_status exa 
 WHERE substr(exa.from,2) NOT IN (SELECT frn.login_mobile1 mobile FROM pnh_m_franchise_info frn)

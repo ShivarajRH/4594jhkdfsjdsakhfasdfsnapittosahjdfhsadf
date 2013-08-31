@@ -122,7 +122,6 @@
                     <div class="tab_content"></div>
                 </div>
 
-
                 </div>
             </div>
             
@@ -182,15 +181,13 @@
 .dash_bar {   cursor: pointer;float: left; margin-top:-2%; margin-right: 0; margin-bottom: 0;  margin-left:37%; position:relative; }
 </style>
 <script>
-//	function show_log() {
-//		location.href = site_url+'/admin/jx_getpnh_calls_log/'+$('#inp_date').val();
-//	}
+//	function show_log() { location.href = site_url+'/admin/jx_getpnh_calls_log/'+$('#inp_date').val();}
 	
 	function  load_callslog_data(ele,p1,p2,c,pg) {
             var scrolldiv= "#"+p1+" #"+p2+" "+$(ele).attr('href')+' div.tab_content';
             //$("div.tab_content").html('<div align="center"><img src="'+base_url+'/images/jx_loading.gif'+'"></div>');
             var posturl=site_url+'admin/jx_getpnh_calls_log/'+p1+'/'+p2+'/'+c+"/"+pg;
-            var items_info=$("#dash_bar");
+//            var items_info=$("#dash_bar");
             
             
               $("div.tab_content").html('<div class="loading">&nbsp;</div>');
