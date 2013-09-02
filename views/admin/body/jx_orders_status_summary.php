@@ -1,5 +1,5 @@
 <?php 
-	
+	echo 'Hi';die();
 		$order_cond = '';
 		$type = $this->input->post('type');
 		

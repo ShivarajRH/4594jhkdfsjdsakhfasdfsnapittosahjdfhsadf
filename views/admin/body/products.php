@@ -173,7 +173,7 @@ echo $output;
         var classname=$("table").data("sdata").classname;
         var firstrun=$("table").data("sdata").firstrun; 
         var pagination=$("table").data("sdata").pagination; 
-        var ajax_url=$("table").data("sdata").url;  
+        var ajax_url=$("table").data("sdata").url;
         var jqxhr='';
         
         if(firstrun=='true') {  //alert("1"+ajax_url);

@@ -36,7 +36,6 @@
                     <div class="tab_content"></div>
                 </div>
 
-
                 </div>
             </div>
             
@@ -188,16 +187,11 @@
             //$("div.tab_content").html('<div align="center"><img src="'+base_url+'/images/jx_loading.gif'+'"></div>');
             var posturl=site_url+'admin/jx_getpnh_calls_log/'+p1+'/'+p2+'/'+c+"/"+pg;
 //            var items_info=$("#dash_bar");
-            
-            
-              $("div.tab_content").html('<div class="loading">&nbsp;</div>');
-              var loading=$(".loading");  loading.css({"visibility":"visible"});
-                
-            
+            $("div.tab_content").html('<div class="loading">&nbsp;</div>');
+            var loading=$(".loading");  loading.css({"visibility":"visible"});
             $.post(posturl,'',function(resp){ 
                 //print(resp);return false;
                 $(scrolldiv).print(resp); //or print_r(obj);return false;
-                
                 if(resp.status=='fail') {
 //                    $("#dash_bar").html(resp.items_info);
                     $(scrolldiv).html("<br>"+resp.response);//resp.status
@@ -213,44 +207,31 @@
             .fail(fail);
 	}
         function done(data) { }
-	function fail(xhr,status) { print(xhr.responseText+" "+xhr+" | "+status);
-            //.toSource()
-        }
-	$('#inp_date').datepicker();
+	function fail(xhr,status) { print(xhr.responseText+" "+xhr+" | "+status);}
 	
+        $('#inp_date').datepicker();
 	$('.tab_view').tabs();
 	$('.datagridsort').tablesorter( {sortList: [[0,0]]} );
-
+        $('.trg_onload').trigger('click');
+        
 	$('.log_pagination a').live('click',function(e){
 		e.preventDefault();
-                
                 $("div.tab_content").html('<div class="loading">&nbsp;</div>');
                 var loading=$(".loading");  loading.css({"visibility":"visible"});
-                
-		$.post($(this).attr('href'),'',function(resp){
+        	$.post($(this).attr('href'),'',function(resp){
                         var scrolldiv= "#"+resp.p1+" #"+resp.p2+" #"+resp.c+' div.tab_content';
-
                         if(resp.status=='fail') {
                                     $(scrolldiv).html("<br>"+resp.response);//resp.status
                         }    
                         else if(resp.status=='success') {
-                            //$(scrolldiv).html(resp.log_data+resp.pagi_links);
                             $(scrolldiv).html(resp.log_data+resp.pagi_links);
-                            
         //                    $("#dash_bar").html(resp.items_info);
         //                    $(".dash_bar").html("Showing <strong>"+parseInt(resp.newpg)+"</strong> to <strong>"+parseInt(resp.limit)+'</strong> of <strong>'+parseInt(resp.tbl_total_rows)+"</strong>");
                             $(scrolldiv+' .datagridsort').tablesorter();
                         }
-                        //$(scrolldiv).append('<div class="loading">&nbsp;</div>');
                         return false;
                 },'json')
-                .done(function() {
-                     //print(loading.text());
-                     //loading.html("Bye");
-                    //loading.css({"visibility":"hidden"});
+                .done(function() { //loading.css({"visibility":"hidden"});
                 });
             });
-	
-	$('.trg_onload').trigger('click');
-
 </script>
