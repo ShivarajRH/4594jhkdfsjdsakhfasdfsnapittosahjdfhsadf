@@ -1681,7 +1681,7 @@ class Erp extends Voucher
 	}
 	
 	
-	function order_status_summary($s=false,$e=false)
+	function orders_status_summary($s=false,$e=false)
 	{
 		$user=$this->auth(CALLCENTER_ROLE);
 		if(!$s)
@@ -1708,11 +1708,9 @@ class Erp extends Voucher
 		$data['e']=date("g:ia d/m/y",$to);
 		$data['orders']=$order;
 		$data['deal']=$deal;
-		$data['page']="order_status_summary";
+		$data['page']="orders_status_summary";
 		$this->load->view("admin",$data);
                 /*
-                
-                
                 $user=$this->auth(PNH_EXECUTIVE_ROLE|CALLCENTER_ROLE);
 		$data['frans']=$this->erpm->pnh_getfranchises();
 		$data['suspended_frans_ttl']=$this->db->query("select count(*) as t from pnh_m_franchise_info where is_suspended = 1 ")->row()->t;
@@ -1722,7 +1720,27 @@ class Erp extends Voucher
                 
                 
 	}
-	
+        
+        /*
+         * Dispay order list by status
+         */
+	function jx_orders_status_summary($type,$date_from,$date_to,$start=1,$limit=25) {
+           # $order_cond = '';
+            //$type = $this->input->post('type');
+            $st_ts = strtotime($date_from.' 00:00:00');
+            $en_ts = strtotime($date_to.' 23:59:59');
+
+            $data['start']=$start;
+            $data['limit']=$limit;
+            $data['type']=$type;
+            $data['st_ts']=$st_ts;
+            $data['en_ts']=$en_ts;
+            //print_r($data);
+            //print_r($date_from.$date_to); 
+            //die();
+            $this->load->view("admin/body/jx_orderstatus_summary",$data);
+
+        }
 	function orders($status=0,$s=false,$e=false,$orders_by='all',$limit=50,$pg=0)
 	{
 		$user=$this->auth(CALLCENTER_ROLE);
@@ -7235,7 +7253,7 @@ class Erp extends Voucher
 		    'CallType' => "trans"
 		);
 		$this->session->set_userdata("agent_mobile",$agent);
- 
+// https://snapittoday:491140e9fbe5c507177228cf26cf2f09356e042c@twilix.exotel.in/v1/Accounts/f23cb48d1abdcf70cc057bd140c5c77e/Calls/connect
 		$exotel_sid = "snapittoday"; // Your Exotel SID
 		$exotel_token = "491140e9fbe5c507177228cf26cf2f09356e042c"; // Your exotel token
 		 
@@ -13934,67 +13952,12 @@ WHERE emp.employee_id IS NULL OR emp.name IS NULL ';
                             $sql_total = $presql;
                             
                             //$this->json_error_show("$sql_total");
-                            
-                            /*echo 'SELECT * FROM 
-                                (
-                                (
-                                select exa.from mobile,exa.callsid,exa.dialwhomno as towhom,exa.status,exa.created_on as calledtime from t_exotel_agent_status exa 
-                                WHERE substr(exa.dialwhomno,2) NOT LIKE "%(SELECT emp.contact_no mobile FROM m_employee_info emp)"
-                                )
-                                UNION
-                                (
-                                select exa.from mobile,exa.callsid,exa.dialwhomno as towhom,exa.status,exa.created_on as calledtime from t_exotel_agent_status exa 
-                                WHERE substr(exa.from,2) NOT IN (SELECT frn.login_mobile1 mobile FROM pnh_m_franchise_info frn)
-                                )
-                                ) as b';*/
-                                    
+                                                                
                             $tbl_total_rows = $this->db->query($sql_total)->num_rows();
 
                             $sql = $sql_total." order by calledtime DESC limit $pg,$limit";
                             
                        
-                        
-//                    }//                    elseif($p1 == 'receivedcalls') {
-//                           // $presql=" join m_employee_info emp on emp.contact_no = substr(exa.dialwhomno,2) ".$presql;
-//                            
-//                            if($p2=='all_calls') {
-//                                $presql.=' ';
-//                                $presql.=$this->calls_fun1($p1,$p2);
-//                            }
-//                            if($p2=='busy_calls') {
-//                                $presql.=' and exa.status="busy" ';
-//                                $presql.=$this->calls_fun1($p1,$p2);
-//
-//                            }
-//                            elseif($p2=='attended_calls') {
-//                                $presql.=' and exa.status="free" ';
-//                                $presql.=$this->calls_fun1($p1,$p2);
-//                            }
-//                            else $presql.=' ';
-//                            
-//                            $sql_total = "select emp.employee_id,emp.name caller,emp.contact_no,exa.callsid,exa.dialwhomno as towhom,exa.status,exa.created_on as calledtime
-//                                    from  t_exotel_agent_status exa ".$presql;
-//                           
-//                            $tbl_total_rows = $this->db->query($sql_total)->num_rows();
-//
-//                            $sql = "select emp.employee_id,emp.name caller,emp.contact_no,exa.callsid,exa.dialwhomno as towhom,exa.status,exa.created_on as calledtime
-//                                    from  t_exotel_agent_status exa ".$presql."
-//                                    order by calledtime,callsid ASC limit $pg,$limit";
-//                            
-//                    } 
-//                    else { $this->json_error_show("Invalid input. <br>$p1,$p2,$c,$pg"); }
-//                    
-                            
-//                            $sql_total = "select emp.employee_id,emp.name caller,emp.contact_no,exa.callsid,exa.dialwhomno as towhom,exa.status,exa.created_on as calledtime
-//                                    from  t_exotel_agent_status exa ".$presql;
-//                           
-//                            $tbl_total_rows = $this->db->query($sql_total)->num_rows();
-//
-//                            $sql = "select emp.employee_id,emp.name caller,emp.contact_no,exa.callsid,exa.dialwhomno as towhom,exa.status,exa.created_on as calledtime
-//                                    from  t_exotel_agent_status exa ".$presql."
-//                                    order by calledtime,callsid ASC limit $pg,$limit";
-                            
-                            	
 				$log_calls_details_res=$this->db->query($sql);
 			
 				$tbl_head = array('slno'=>'Slno','callerid'=>'Caller ID','callername'=>'Caller Name','mobile'=>'Mobile Num.','callsid'=>'Calls ID','towhom'=>'To Whom','status'=>'Status','calledtime'=>'Called Time');
