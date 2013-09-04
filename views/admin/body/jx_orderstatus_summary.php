@@ -5,10 +5,11 @@
 								from king_orders o 
 								join king_transactions c on o.transid = c.transid 
 								join pnh_member_info pu on pu.user_id=o.userid 
-                                                              where c.init between $st_ts and $en_ts
-    							group by c.transid  
-							order by c.init desc limit $start,$limit"; 
-		} else if($type == 'shipped')
+							where c.init between $st_ts and $en_ts  
+							group by c.transid  
+							order by c.init desc  ";
+							
+		}else if($type == 'shipped')
 		{
 			$sql = "select distinct b.transid,sum(o.i_coup_discount) as com,c.amount,o.transid,o.status,o.time,o.actiontime,pu.user_id as userid,pu.pnh_member_id 
 						from shipment_batch_process_invoice_link a
@@ -18,7 +19,7 @@
 						join pnh_member_info pu on pu.user_id=o.userid 
 						where o.status = 2 and a.shipped = 1 and is_pnh = 1 and a.shipped_on between from_unixtime($st_ts) and from_unixtime($en_ts)   
 						group by b.transid 
-						order by a.shipped_on desc limit $start,$limit ";
+						order by a.shipped_on desc";
 					
 			$order_cond = " and a.status = 2 and d.shipped = 1 and d.shipped_on between from_unixtime($st_ts) and from_unixtime($en_ts) ";
 			 
@@ -30,11 +31,10 @@
 							left join proforma_invoices c on c.order_id = o.id
 							left join shipment_batch_process_invoice_link d on d.p_invoice_no = c.p_invoice_no and d.shipped = 0 
 							join pnh_member_info pu on pu.user_id=o.userid 
-							where o.status != 3 
+							where o.status != 3 and o.actiontime between $st_ts and $en_ts 
 							group by b.transid 
-							order by b.init desc limit $start,$limit 
-                                                        ";
-			$order_cond = " and a.status != 3 and (d.shipped = 0 or d.shipped is null ) and t.init between $st_ts and $en_ts ";	
+							order by b.init desc";
+			$order_cond = " and a.status != 3 and (d.shipped = 0 or d.shipped is null ) and t.init between $st_ts and $en_ts   ";		
 		}else if($type == 'cancelled')
 		{
 			$sql = "select distinct b.transid,sum(o.i_coup_discount) as com,b.amount,o.transid,o.status,o.time,o.actiontime,pu.user_id as userid,pu.pnh_member_id  
@@ -45,28 +45,30 @@
 						join pnh_member_info pu on pu.user_id=o.userid 
 						where o.status = 3  and o.actiontime between $st_ts and $en_ts   
 						group by b.transid 
-						order by b.init desc  limit $limit ";
+						order by b.init desc  ";
 			$order_cond = " and a.status = 3 and a.actiontime between $st_ts and $en_ts  ";
 		}
-		
-//                echo $sql; die("TESTING");
-		$res = $this->db->query($sql);//,array($fid)
+                
+                $total_results=$this->db->query($sql)->num_rows();
+		$sql .=" limit $pg,$limit ";
+                
+//                echo $presql; die("TESTING");
+                
+		$res = $this->db->query($sql); //,array($fid)
 		$order_stat=array("Confirmed","Invoiced","Shipped","Cancelled");
                 
 		$resonse='';
-		if(!$res->num_rows())
-		{
+		if(!$total_results) {
 			$resonse.="<div align='center'><h3 style='margin:2px;'>No Orders found for selected dates</h3></div>".'<table class="datagrid" width="100%"></table>';	
-		}else
-		{
-			$resonse.='<div align="left"><h3 style="margin:2px;" id="ttl_orders_listed">Showing <b></b> Orders from '.format_date(date('Y-m-d',$st_ts)).' to '.format_date(date('Y-m-d',$en_ts)).' </h3></div>';
+		}else {
+                    $endlimit=($pg+1*$limit);//($total_results>$limit)?$limit : $total_results;
+                    $resonse.='<div align="left"><h3 style="margin:2px;" id="ttl_orders_listed">Showing <b>'.($pg+1).' to '.$endlimit.'</b> of '.$total_results.' Orders from '.format_date(date('Y-m-d',$st_ts)).' to '.format_date(date('Y-m-d',$en_ts)).' </h3></div>';
 				
-                        $total_results=$res->num_rows();
+                        
                 $resonse.='
                     <table class="datagrid" width="100%">
                     <thead><tr><th>Time</th><th>Order</th><th>Amount</th><th>Commission</th><th>Deal/Product details</th><th>Status</th><th>Last action</th></tr></thead>
-                    <tbody>
-                        ';
+                    <tbody>';
 
                             $k = 0;
                             foreach($res->result_array() as $o)
@@ -182,34 +184,36 @@
                                     $resonse.='</div>';
                                     
                             $actiontime= $o['actiontime']==0?"na":format_datetime(date('Y-m-d H:i:s', $o['actiontime'] ) );
-                            
                             $resonse.='</td>
                             <td>'.$actiontime.'</td>
                             </tr>';
-                    }
+                        }
 
                         $resonse.='</tbody> 
-                            </table>dsafsdfsdf';
-                     }
-                   
+                            </table>';
+//                    PAGINATION
+                    $date_from=date("Y-m-d",$st_ts);
+                    $date_to=date("Y-m-d",$en_ts);
+                    
                     $this->load->library('pagination');
-
-                   // $s = $s?$s:0;// $e = $e?$e:0;
-
-                    $config['base_url'] = site_url("admin/jx_orders_status_summary/$type/$st_ts/$en_ts");//site_url("admin/orders/$status/$s/$e/$orders_by/$limit");
+                    
+                   
+                    $config['base_url'] = site_url("admin/jx_orders_status_summary/".$type.'/'.$date_from.'/'.$date_to); //site_url("admin/orders/$status/$s/$e/$orders_by/$limit");
                     $config['total_rows'] = $total_results;
                     $config['per_page'] = $limit;
-                    $config['uri_segment'] = 8; 
+                    $config['uri_segment'] = 6; 
                     $config['num_links'] = 5;
-
-                    $this->config->set_item('enable_query_strings',false);
+                    
+                    $this->config->set_item('enable_query_strings',false); 
                     $this->pagination->initialize($config); 
-
                     $orders_pagination = $this->pagination->create_links();
-                    $this->config->set_item('enable_query_strings',true);
+                   
+                    $resonse .= '<div id="orders_status_pagination">'.$orders_pagination.'</div>';
+                    $this->config->set_item('enable_query_strings',TRUE);
+//                    PAGINATION ENDS
                     
-                    $resonse .= '<div class="orders_pagination">'.$orders_pagination.'</div>';
-                    
-                    $resonse.='<script>$("#ttl_orders_listed b").html('.$k.');</script>';
+                    }
+
+//                  $resonse.='<script>$("#ttl_orders_listed b").html('.$k.');</script>';
                     echo $resonse;
 ?>

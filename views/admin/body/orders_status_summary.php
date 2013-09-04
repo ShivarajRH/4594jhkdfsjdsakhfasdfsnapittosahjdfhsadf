@@ -49,6 +49,7 @@ function date_range()
 
 
 <script>
+    //ENTRY 1
     $(".load_type").bind("click",function(e){
         e.preventDefault();
         var stat=this.id;
@@ -56,6 +57,7 @@ function date_range()
         load_all_orders(stat);
         return false;
     });
+    //ENTRY 2
     $("#ord_list_frm").bind("submit",function(e){
         e.preventDefault();
         var stat='1';
@@ -63,20 +65,49 @@ function date_range()
         return false;
     });
     
+    //ENTRY 3
+    $("#orders_status_pagination a").live("click",function(e){
+             e.preventDefault();
+            //var stat=$('#ord_list_frm input[name="type"]').val();
+            var ajax_url=$(this).attr('href');
 
-    
+            $("table").data("sdata", {  issorting : "no",idname:'',classname:'',firstrun:'no',pagination:"true",url:ajax_url });
+            load_all_orders_pagelink(ajax_url);
+            return false;
+    });
+
+    //ENTRY 4
     $(document).ready(function() {    
         //FIRST RUN
         var url="<?php echo site_url("admin/jx_orders_status_summary"); ?>";
          $("table").data("sdata", { type:'all', issorting : "no",idname:'',classname:'',firstrun:'true',pagination:"false",url:url });
          loadTableData();
-     });
     
+    });
+    
+    
+    function load_all_orders_pagelink(ajax_url) {
+        
+         $('.orders_status_summary_div').html("Loading...");
+                
+        //var indata="/"+fil_ordersby+"/"+date_from+"/"+date_to;
+        
+        $("table").data("sdata", { type: fil_ordersby,date_from:date_from,date_to:date_to, issorting : "no",idname:'',classname:'',firstrun:'no',pagination:"true",url:ajax_url });
+        
+        print("3. "+ajax_url);
+        
+        //return false;
+        $.post(ajax_url,success)
+        .done(done)
+        .fail(fail);
+    }
     var fil_ordersby = 'all';
     
     function load_all_orders(stat) {
-            var ajax_url=$("table").data("sdata").url;
-            
+        
+            var url=$("table").data("sdata").url;
+            var pagination=$("table").data("sdata").pagination;
+            var ajax_url;
             //1. type
 		if(stat != '1')
 			fil_ordersby = stat;
@@ -91,6 +122,7 @@ function date_range()
                 
             //3. pagination
             
+
                 $("table").data("sdata", { type: fil_ordersby,date_from:date_from,date_to:date_to, issorting : "no",idname:'',classname:'',firstrun:'no',pagination:"true",url:ajax_url });
                 	
 				
@@ -100,13 +132,16 @@ function date_range()
                 
                 var indata="/"+fil_ordersby+"/"+date_from+"/"+date_to;
                 
-                print("2. "+ajax_url+"/"+indata);
+                if(pagination=='true') {
+                    ajax_url=url;
+                }
+                else {
+                    ajax_url=url+indata;
+                }
+                print("2. "+ajax_url);
                 
                 //return false;
-		$.post(ajax_url+indata,function(resp){    //$('#ord_list_frm').serialize()
-			$('.orders_status_summary_div').html(resp);
-                        return false;
-		},'html')
+		$.post(ajax_url,success)
                 .done(done)
                 .fail(fail);
 		return false;
@@ -121,8 +156,8 @@ function date_range()
                $( "#date_from").datepicker({
                     changeMonth: true,
                     dateFormat:'yy-mm-dd',
-                    //numberOfMonths: 1,
-                    //maxDate:0,
+                    numberOfMonths: 1,
+                    maxDate:0,
                     //minDate: new Date(reg_date),
                       onClose: function( selectedDate ) {
                       $( "#date_to" ).datepicker( "option", "minDate", selectedDate );
@@ -147,21 +182,24 @@ function date_range()
 
                 var date_from=$( "#date_from").val();
                 var date_to=$( "#date_to").val();
+                //pagination:
                 
                 //var indata=$("#ord_list_frm").serialize()+"&type="+type;
-                var indata="/"+fil_ordersby+"/"+date_from+"/"+date_to;
+                var indata="/"+fil_ordersby+"/"+date_from+"/"+date_to+"/0"+"/25";
                 
-                print(ajax_url+"/"+indata);
                 
-                $.post(ajax_url+indata,function(resp){
-                        $('.orders_status_summary_div').html(resp); 
-                })
+                print(ajax_url+indata);
+                
+                $.post(ajax_url+indata,success)
                 .done(done)
                 .fail(fail);
            }
  
         function done(data) { }
 	function fail(xhr,status) { $('.orders_status_summary_div').print("Error: "+xhr.responseText+" "+xhr+" | "+status);}
+        function success(resp) {
+                $('.orders_status_summary_div').html(resp);
+        }
   
 //  
         
@@ -279,6 +317,10 @@ filter("");
 .datagrid1 td a{text-transform: capitalize}
 .datagrid1 td b{font-weight: bold;font-size: 11px;}
 
+/*PAGINATION*/
+.orders_pagination {
+    float: left;
+}
 </style>	
 
 

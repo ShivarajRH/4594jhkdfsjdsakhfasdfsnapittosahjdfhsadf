@@ -1724,20 +1724,18 @@ class Erp extends Voucher
         /*
          * Dispay order list by status
          */
-	function jx_orders_status_summary($type,$date_from,$date_to,$start=1,$limit=25) {
-           # $order_cond = '';
+	function jx_orders_status_summary($type,$date_from,$date_to,$pg=0,$limit=25) {
             //$type = $this->input->post('type');
             $st_ts = strtotime($date_from.' 00:00:00');
             $en_ts = strtotime($date_to.' 23:59:59');
 
-            $data['start']=$start;
-            $data['limit']=$limit;
             $data['type']=$type;
+            $data['pg']=$pg;
+            $data['limit']=$limit;
             $data['st_ts']=$st_ts;
             $data['en_ts']=$en_ts;
-            //print_r($data);
-            //print_r($date_from.$date_to); 
-            //die();
+            
+//            print_r($data);die();
             $this->load->view("admin/body/jx_orderstatus_summary",$data);
 
         }
