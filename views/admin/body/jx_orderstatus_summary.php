@@ -1,69 +1,90 @@
 <?php
-		if($type == 'all')
-		{
-			$sql = "select distinct c.transid,sum(o.i_coup_discount) as com,c.amount,o.transid,o.status,o.time,o.actiontime,pu.user_id as userid,pu.pnh_member_id 
-								from king_orders o 
-								join king_transactions c on o.transid = c.transid 
-								join pnh_member_info pu on pu.user_id=o.userid 
-							where c.init between $st_ts and $en_ts  
-							group by c.transid  
-							order by c.init desc  ";
+        
+    $cond = '';
+
+        $sql_all = "select distinct c.transid,sum(o.i_coup_discount) as com,c.amount,o.transid,o.status,o.time,o.actiontime,pu.user_id as userid,pu.pnh_member_id 
+                    from king_orders o 
+                    join king_transactions c on o.transid = c.transid 
+                    join pnh_member_info pu on pu.user_id=o.userid 
+                    join pnh_m_franchise_info d on d.franchise_id = c.franchise_id
+                    join pnh_towns e on e.id = d.town_id 
+                    join pnh_m_territory_info f on f.id = d.territory_id 
+            where c.init between $st_ts and $en_ts  
+            group by c.transid  
+            order by c.init desc  ";
+        
+        $sql_shipped = "select distinct b.transid,sum(o.i_coup_discount) as com,c.amount,o.transid,o.status,o.time,o.actiontime,pu.user_id as userid,pu.pnh_member_id 
+                            from shipment_batch_process_invoice_link a
+                            join proforma_invoices b on a.p_invoice_no = b.p_invoice_no
+                            join king_transactions c on c.transid = b.transid
+                            join king_orders o on o.id = b.order_id  
+                            join pnh_member_info pu on pu.user_id=o.userid 
+                            where o.status = 2 and a.shipped = 1 and is_pnh = 1 and a.shipped_on between from_unixtime($st_ts) and from_unixtime($en_ts)   
+                            group by b.transid 
+                            order by a.shipped_on desc";
+        
+        $sql_unshipped = "select distinct b.transid,sum(o.i_coup_discount) as com,b.amount,o.transid,o.status,o.time,o.actiontime,pu.user_id as userid,pu.pnh_member_id
+                                from king_orders o 
+                                join king_transactions b on o.transid = b.transid 
+                                left join proforma_invoices c on c.order_id = o.id
+                                left join shipment_batch_process_invoice_link d on d.p_invoice_no = c.p_invoice_no and d.shipped = 0 
+                                join pnh_member_info pu on pu.user_id=o.userid 
+                                where o.status != 3 and o.actiontime between $st_ts and $en_ts 
+                                group by b.transid 
+                                order by b.init desc";
+        
+        $sql_cancelled = "select distinct b.transid,sum(o.i_coup_discount) as com,b.amount,o.transid,o.status,o.time,o.actiontime,pu.user_id as userid,pu.pnh_member_id  
+                            from king_orders o  
+                            join king_transactions b on o.transid = b.transid 
+                            left join proforma_invoices c on c.order_id = o.id
+                            left join shipment_batch_process_invoice_link d on d.p_invoice_no = c.p_invoice_no and d.shipped = 0 
+                            join pnh_member_info pu on pu.user_id=o.userid 
+                            where o.status = 3  and o.actiontime between $st_ts and $en_ts   
+                            group by b.transid 
+                            order by b.init desc  ";
+        
+		if($type == 'all') {
+			$sql=$sql_all;
 							
-		}else if($type == 'shipped')
-		{
-			$sql = "select distinct b.transid,sum(o.i_coup_discount) as com,c.amount,o.transid,o.status,o.time,o.actiontime,pu.user_id as userid,pu.pnh_member_id 
-						from shipment_batch_process_invoice_link a
-						join proforma_invoices b on a.p_invoice_no = b.p_invoice_no
-						join king_transactions c on c.transid = b.transid
-						join king_orders o on o.id = b.order_id  
-						join pnh_member_info pu on pu.user_id=o.userid 
-						where o.status = 2 and a.shipped = 1 and is_pnh = 1 and a.shipped_on between from_unixtime($st_ts) and from_unixtime($en_ts)   
-						group by b.transid 
-						order by a.shipped_on desc";
-					
+		}else if($type == 'shipped') {
+                    
+			$sql=$sql_shipped;
 			$order_cond = " and a.status = 2 and d.shipped = 1 and d.shipped_on between from_unixtime($st_ts) and from_unixtime($en_ts) ";
 			 
-		}else if($type == 'unshipped')
-		{
-			$sql = "select distinct b.transid,sum(o.i_coup_discount) as com,b.amount,o.transid,o.status,o.time,o.actiontime,pu.user_id as userid,pu.pnh_member_id
-							from king_orders o 
-							join king_transactions b on o.transid = b.transid 
-							left join proforma_invoices c on c.order_id = o.id
-							left join shipment_batch_process_invoice_link d on d.p_invoice_no = c.p_invoice_no and d.shipped = 0 
-							join pnh_member_info pu on pu.user_id=o.userid 
-							where o.status != 3 and o.actiontime between $st_ts and $en_ts 
-							group by b.transid 
-							order by b.init desc";
-			$order_cond = " and a.status != 3 and (d.shipped = 0 or d.shipped is null ) and t.init between $st_ts and $en_ts   ";		
-		}else if($type == 'cancelled')
-		{
-			$sql = "select distinct b.transid,sum(o.i_coup_discount) as com,b.amount,o.transid,o.status,o.time,o.actiontime,pu.user_id as userid,pu.pnh_member_id  
-						from king_orders o  
-						join king_transactions b on o.transid = b.transid 
-						left join proforma_invoices c on c.order_id = o.id
-						left join shipment_batch_process_invoice_link d on d.p_invoice_no = c.p_invoice_no and d.shipped = 0 
-						join pnh_member_info pu on pu.user_id=o.userid 
-						where o.status = 3  and o.actiontime between $st_ts and $en_ts   
-						group by b.transid 
-						order by b.init desc  ";
+		}else if($type == 'unshipped') {
+                    
+			$sql=$sql_unshipped;
+                        $order_cond = " and a.status != 3 and (d.shipped = 0 or d.shipped is null ) and t.init between $st_ts and $en_ts   ";	
+                        
+		}else if($type == 'cancelled') {
+                    
+			$sql=$sql_cancelled;
 			$order_cond = " and a.status = 3 and a.actiontime between $st_ts and $en_ts  ";
 		}
                 
                 $total_results=$this->db->query($sql)->num_rows();
+                
+                $total_results_all=$this->db->query($sql_all)->num_rows();
+                $total_results_shipped=$this->db->query($sql_shipped)->num_rows();
+                $total_results_unshipped=$this->db->query($sql_unshipped)->num_rows();
+                $total_results_cancelled=$this->db->query($sql_cancelled)->num_rows();
+
 		$sql .=" limit $pg,$limit ";
                 
-//                echo $presql; die("TESTING");
+                //echo $sql."<br>".$total_results_shipped."<br>".$total_results_unshipped."<br>".$total_results_cancelled."<br>"."<br>"; die("TESTING");
                 
 		$res = $this->db->query($sql); //,array($fid)
 		$order_stat=array("Confirmed","Invoiced","Shipped","Cancelled");
                 
 		$resonse='';
 		if(!$total_results) {
-			$resonse.="<div align='center'><h3 style='margin:2px;'>No Orders found for selected dates</h3></div>".'<table class="datagrid" width="100%"></table>';	
+			$resonse.="<div align='center'><h3 style='margin:2px;'>No Orders found for selected dates (".format_date(date('Y-m-d',$st_ts)) ." to ".format_date(date('Y-m-d',$en_ts)).")</h3></div>".'<table class="datagrid" width="100%"></table>';	
 		}else {
-                    $endlimit=($pg+1*$limit);//($total_results>$limit)?$limit : $total_results;
+                    $endlimit=($pg+1*$limit);
+                    $endlimit=($endlimit>$total_results)?$total_results : $endlimit;
                     $resonse.='<div align="left"><h3 style="margin:2px;" id="ttl_orders_listed">Showing <b>'.($pg+1).' to '.$endlimit.'</b> of '.$total_results.' Orders from '.format_date(date('Y-m-d',$st_ts)).' to '.format_date(date('Y-m-d',$en_ts)).' </h3></div>';
 				
+$resonse.='<script type="text/javascript">$(".shipped_pop").addClass("popbg"); $(".shipped_pop").html("'.$total_results_shipped.'"); $(".unshipped_pop").addClass("popbg"); $(".unshipped_pop").html("'.$total_results_unshipped.'"); $(".cancelled_pop").addClass("popbg"); $(".cancelled_pop").html("'.$total_results_cancelled.'");</script>';
                         
                 $resonse.='
                     <table class="datagrid" width="100%">
@@ -183,7 +204,7 @@
                                     }
                                     $resonse.='</div>';
                                     
-                            $actiontime= $o['actiontime']==0?"na":format_datetime(date('Y-m-d H:i:s', $o['actiontime'] ) );
+                            $actiontime= ($o['actiontime']==0)?"na":format_datetime(date('Y-m-d H:i:s', $o['actiontime'] ) );
                             $resonse.='</td>
                             <td>'.$actiontime.'</td>
                             </tr>';

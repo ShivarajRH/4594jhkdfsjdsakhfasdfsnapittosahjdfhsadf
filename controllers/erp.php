@@ -1725,6 +1725,8 @@ class Erp extends Voucher
          * Dispay order list by status
          */
 	function jx_orders_status_summary($type,$date_from,$date_to,$pg=0,$limit=25) {
+            
+            $this->erpm->auth();
             //$type = $this->input->post('type');
             $st_ts = strtotime($date_from.' 00:00:00');
             $en_ts = strtotime($date_to.' 23:59:59');
@@ -1739,6 +1741,55 @@ class Erp extends Voucher
             $this->load->view("admin/body/jx_orderstatus_summary",$data);
 
         }
+        
+        /**
+         * function to generate town list by territoryid 
+         * @param type $townid
+         */
+        function jx_suggest_townbyterrid($terrid)
+        {
+            $this->erpm->auth();
+            
+            $output = array();
+            // populate all towns in territory 
+            $town_list_res = $this->db->query("select id,town_name from pnh_towns where territory_id = ? order by town_name ",$terrid);
+            if($town_list_res->num_rows())
+            {
+                $output['status'] = 'success';
+                $output['towns'] = json_encode($town_list_res->result_array());
+            }else
+            {
+                $output['status'] = 'error';
+                $output['message'] = 'No towns for territory';
+            }
+            echo json_encode($output);
+        }
+        /**
+         * Function to fetch all franchise under territory and town
+         * @param type $terrid
+         * @param type $townid
+         */
+        function jx_suggest_fran($terrid=0,$townid=0)
+        {
+            // populate all franchise in town 
+            $this->erpm->auth();
+            // echo json_encode(array("status"=>"success","franchise"=>"$terrid,$townid"));
+            $output = array();
+            // populate all towns in territory 
+            $franchise_list_res = $this->db->query("select franchise_id,franchise_name from pnh_m_franchise_info where territory_id = ? and town_id = ? order by franchise_name ",array($terrid,$townid));
+            if($franchise_list_res->num_rows() and $terrid != '00' and $townid != '00')
+            {
+                $output['status'] = 'success';
+                $output['franchise'] = json_encode($franchise_list_res->result_array());
+            }else
+            {
+                $output['status'] = 'error';
+                $output['message'] = 'No franchise under this town.';
+            }
+            echo json_encode($output);
+            
+        }
+        
 	function orders($status=0,$s=false,$e=false,$orders_by='all',$limit=50,$pg=0)
 	{
 		$user=$this->auth(CALLCENTER_ROLE);

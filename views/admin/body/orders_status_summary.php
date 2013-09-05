@@ -1,4 +1,29 @@
 <div class="container">
+    <div class="">
+        <form>
+            <select id="sel_territory" >
+                <option value="00">All Territory</option>
+                <?php 
+                    foreach($pnh_terr as $terr)
+                    {
+                ?>
+                        <option value="<?php echo $terr['id'];?>"><?php echo $terr['territory_name'];?></option>
+                <?php
+                    }
+                ?>
+                
+            </select>
+            <select id="sel_town">
+                <option value="00">All Towns</option>
+                
+            </select>
+            <select id="sel_franchise">
+                <option value="00">All Franchise</option>
+            </select>
+        </form>
+        <div class="sel_status"></div>
+    </div>
+    <hr>
     <div id="franchise_order_list_wrapper" style="clear: both; z-index: 9 !important;">
         <div id="franchise_ord_list" style="clear: both;overflow: hidden">
                 <table width="100%" >
@@ -6,10 +31,10 @@
                                 <td>
                                         <div class="tab_list" style="clear: both;overflow: hidden">
                                                     <ol>
-                                                            <li><a class="load_type" id="all" href="javascript:void(0)">All</a></li>
-                                                            <li><a class="load_type" id="shipped" href="javascript:void(0)">Shipped</a></li>
-                                                            <li><a class="load_type" id="unshipped" href="javascript:void(0)">UnShipped</a></li>
-                                                            <li><a class="load_type" id="cancelled" href="javascript:void(0)">Cancelled</a></li>
+                                                            <li><a class="load_type" id="all" href="javascript:void(0)">All</a><div class="all_pop"></div></li>
+                                                            <li><a class="load_type" id="shipped" href="javascript:void(0)">Shipped</a><div class="shipped_pop"></div></li>
+                                                            <li><a class="load_type" id="unshipped" href="javascript:void(0)">UnShipped</a><div class="unshipped_pop"></div></li>
+                                                            <li><a class="load_type" id="cancelled" href="javascript:void(0)">Cancelled</a><div class="cancelled_pop"></div></li>
                                                     </ol>
                                             </div>
                             </td>
@@ -49,11 +74,95 @@ function date_range()
 
 
 <script>
+    //ENTRY 6
+    $("#sel_town").live("change",function() {
+        var townid=$(this).find(":selected").val();//text();
+        if(townid=='00') {
+            $(".sel_status").html("Please select town."); return false;
+        }
+        
+        var terrid=$("table").data("sdata").terrid;
+        if(!terrid) {
+            $(".sel_status").html("Please select territory first."); return false;
+        }
+        
+        $("table").data("sdata", {terrid:terrid,townid:townid});
+        
+        
+        var url="<?php echo site_url("admin/jx_suggest_fran"); ?>"+"/"+terrid+"/"+townid;
+        
+        $.post(url,success_town,'json').done(done).fail(fail);
+        return false;
+    });
+    
+    function success_town(resp) {
+        if(resp.status=='success') {
+            //print(resp.towns);
+            var obj = jQuery.parseJSON(resp.franchise);
+            $("#sel_franchise").html(objToOptions_franchise(obj));
+        }
+        else {
+            $(".sel_status").html(resp.message);
+        }
+    }
+    function objToOptions_franchise(obj) {
+        var output='';
+            output += "<option value='00' selected>Select Franchise</option>\n";
+        $.each(obj,function(key,elt){
+            if(obj.hasOwnProperty(key)) {
+                output += "<option value='"+elt.franchise_id+"'>"+elt.franchise_name+"</option>\n";
+            }
+        });
+        return(output);
+    }
+    
+    //ENTRY 5
+    $("#sel_territory").live("change",function() {
+        var terrid=$(this).find(":selected").val();//text();
+        if(terrid=='00') {
+            $(".sel_status").html("Please select territory."); return false;
+        }
+        
+        $("table").data("sdata", {terrid:terrid});
+        var url="<?php echo site_url("admin/jx_suggest_townbyterrid"); ?>/"+terrid;//  alert(url);
+        $.post(url,success_terr,'json').done(done).fail(fail);
+        return false;
+    });
+    
+    function success_terr(resp) {
+        if(resp.status=='success') {
+             print(resp.towns);
+             var obj = jQuery.parseJSON(resp.towns);
+            
+            //    $(".sel_status").html(objToOptions(obj));
+            $("#sel_town").html(objToOptions_terr(obj));
+                    
+        }
+        else {
+            $(".sel_status").html(resp.message);
+        }
+    }
+    function objToOptions_terr(obj) {
+        var output='';
+            output += "<option value='00' selected>Select Town</option>\n";
+        $.each(obj,function(key,elt){
+            if(obj.hasOwnProperty(key)) {
+                output += "<option value='"+elt.id+"'>"+elt.town_name+"</option>\n";
+            }
+        });
+        return(output);
+    }
+    
     //ENTRY 1
     $(".load_type").bind("click",function(e){
         e.preventDefault();
         var stat=this.id;
-
+        var url="<?php echo site_url("admin/jx_orders_status_summary"); ?>";
+        //2. date
+        var date_from=$( "#date_from").val();
+        var date_to=$( "#date_to").val();
+        $("table").data("sdata", { terrid:0,townid:0,franchid:0,type:stat,date_from:date_from,date_to:date_to, issorting : "no",idname:'',classname:'',firstrun:'no',pagination:"false",url:url });
+        
         load_all_orders(stat);
         return false;
     });
@@ -61,6 +170,12 @@ function date_range()
     $("#ord_list_frm").bind("submit",function(e){
         e.preventDefault();
         var stat='1';
+        var url="<?php echo site_url("admin/jx_orders_status_summary"); ?>";
+        //2. date
+        var date_from=$( "#date_from").val();
+        var date_to=$( "#date_to").val();
+        
+        $("table").data("sdata", {terrid:0,townid:0,franchid:0,type:'all',date_from:date_from,date_to:date_to,  issorting : "no",idname:'',classname:'',firstrun:'no',pagination:"false",url:url });
         load_all_orders(stat);
         return false;
     });
@@ -68,34 +183,48 @@ function date_range()
     //ENTRY 3
     $("#orders_status_pagination a").live("click",function(e){
              e.preventDefault();
-            //var stat=$('#ord_list_frm input[name="type"]').val();
             var ajax_url=$(this).attr('href');
-
-            $("table").data("sdata", {  issorting : "no",idname:'',classname:'',firstrun:'no',pagination:"true",url:ajax_url });
+            
+            $("table").data("sdata", { terrid:0,townid:0,franchid:0, issorting : "no",idname:'',classname:'',firstrun:'no',pagination:"true",url:ajax_url });
             load_all_orders_pagelink(ajax_url);
             return false;
     });
-
+    
     //ENTRY 4
     $(document).ready(function() {    
         //FIRST RUN
-        var url="<?php echo site_url("admin/jx_orders_status_summary"); ?>";
-         $("table").data("sdata", { type:'all', issorting : "no",idname:'',classname:'',firstrun:'true',pagination:"false",url:url });
-         loadTableData();
+        var reg_date = "<?php echo date('m/d/Y',  time());?>";
+        $( "#date_from").datepicker({
+             changeMonth: true,
+             dateFormat:'yy-mm-dd',
+             numberOfMonths: 1,
+             maxDate:0,
+             //minDate: new Date(reg_date),
+               onClose: function( selectedDate ) {
+                 $( "#date_to" ).datepicker( "option", "minDate", selectedDate ); //selectedDate
+             }
+           });
+        $( "#date_to" ).datepicker({
+            changeMonth: true,
+             dateFormat:'yy-mm-dd',
+             numberOfMonths: 1,
+             maxDate:0,
+             onClose: function( selectedDate ) {
+               $( "#date_from" ).datepicker( "option", "maxDate", selectedDate );
+             }
+        });
+
+        prepare_daterange('date_from','date_to');
+
+        loadTableData();
     
     });
     
     
     function load_all_orders_pagelink(ajax_url) {
-        
-         $('.orders_status_summary_div').html("Loading...");
-                
-        //var indata="/"+fil_ordersby+"/"+date_from+"/"+date_to;
-        
-        $("table").data("sdata", { type: fil_ordersby,date_from:date_from,date_to:date_to, issorting : "no",idname:'',classname:'',firstrun:'no',pagination:"true",url:ajax_url });
-        
+        $('.orders_status_summary_div').html("3. Loading...");
+        $("table").data("sdata", { terrid:0,townid:0,franchid:0,type: fil_ordersby,date_from:date_from,date_to:date_to, issorting : "no",idname:'',classname:'',firstrun:'no',pagination:"true",url:ajax_url });
         print("3. "+ajax_url);
-        
         //return false;
         $.post(ajax_url,success)
         .done(done)
@@ -107,7 +236,16 @@ function date_range()
         
             var url=$("table").data("sdata").url;
             var pagination=$("table").data("sdata").pagination;
+            var date_from=$("table").data("sdata").date_from;
+            var date_to=$("table").data("sdata").date_to;
+            var terrid=$("table").data("sdata").terrid;
+            var townid=$("table").data("sdata").townid;
+            var francid=$("table").data("sdata").francid;
+            
             var ajax_url;
+            
+            
+            
             //1. type
 		if(stat != '1')
 			fil_ordersby = stat;
@@ -115,29 +253,19 @@ function date_range()
             $('.tab_list .selected').removeClass('selected');
             $('.tab_list #'+fil_ordersby).addClass('selected');
                 
-            //2. date
-                var date_from=$( "#date_from").val();
-                var date_to=$( "#date_to").val();
-                
-                
-            //3. pagination
             
-
-                $("table").data("sdata", { type: fil_ordersby,date_from:date_from,date_to:date_to, issorting : "no",idname:'',classname:'',firstrun:'no',pagination:"true",url:ajax_url });
-                	
-				
+            			
 		$('#ord_list_frm input[name="type"]').val(fil_ordersby);
 		
-		$('.orders_status_summary_div').html("Loading...");
+		$('.orders_status_summary_div').html("2. Loading...");
                 
                 var indata="/"+fil_ordersby+"/"+date_from+"/"+date_to;
                 
-                if(pagination=='true') {
-                    ajax_url=url;
-                }
-                else {
-                    ajax_url=url+indata;
-                }
+//                if(pagination=='true') {ajax_url=url;}else {
+                    
+//                }
+
+                ajax_url=url+indata;
                 print("2. "+ajax_url);
                 
                 //return false;
@@ -146,51 +274,81 @@ function date_range()
                 .fail(fail);
 		return false;
 	}
+    
+//    function load_all_orders_date(stat) {
+//        
+//            var url=$("table").data("sdata").url;
+//            var pagination=$("table").data("sdata").pagination;
+//            var ajax_url;
+//            //1. type
+//		if(stat != '1')
+//			fil_ordersby = stat;
+//		
+//            $('.tab_list .selected').removeClass('selected');
+//            $('.tab_list #'+fil_ordersby).addClass('selected');
+//                
+//            //2. date
+//                var date_from=$( "#date_from").val();
+//                var date_to=$( "#date_to").val();
+//                
+//                
+//            //3. pagination
+//                $("table").data("sdata", { type: fil_ordersby,date_from:date_from,date_to:date_to, issorting : "no",idname:'',classname:'',firstrun:'no',pagination:"true",url:url });
+//                	
+//				
+//		$('#ord_list_frm input[name="type"]').val(fil_ordersby);
+//		
+//		$('.orders_status_summary_div').html("3. Loading...");
+//                
+//                var indata="/"+fil_ordersby+"/"+date_from+"/"+date_to;
+//                
+//                if(pagination=='true') {
+//                    ajax_url=url;
+//                }
+//                else {
+//                    ajax_url=url+indata;
+//                }
+//                print("2. "+ajax_url);
+//                
+//                //return false;
+//		$.post(ajax_url,success)
+//                .done(done)
+//                .fail(fail);
+//		return false;
+//	}
          
            function loadTableData() {
-               var ajax_url=$("table").data("sdata").url;
-               var type=$("table").data("sdata").type;   //$('#franchise_ord_list_frm').attr('action')
-               //alert(ajax_url);
-               
-               var reg_date = "<?php echo date('m/d/Y',  time());?>";
-               $( "#date_from").datepicker({
-                    changeMonth: true,
-                    dateFormat:'yy-mm-dd',
-                    numberOfMonths: 1,
-                    maxDate:0,
-                    //minDate: new Date(reg_date),
-                      onClose: function( selectedDate ) {
-                      $( "#date_to" ).datepicker( "option", "minDate", selectedDate );
-                    }
-                  });
-                $( "#date_to" ).datepicker({
-                    changeMonth: true,
-                    dateFormat:'yy-mm-dd',
-                    numberOfMonths: 1,
-                    maxDate:0,
-                    onClose: function( selectedDate ) {
-                      $( "#date_from" ).datepicker( "option", "maxDate", selectedDate );
-                    }
-                  });
-                  
-                prepare_daterange('date_from','date_to');
+                //var url=$("table").data("sdata").url;
+                //var pagination=$("table").data("sdata").pagination;
+                //var date_from=$("table").data("sdata").date_from;
+                //var date_to=$("table").data("sdata").date_to;
+                
+                var url="<?php echo site_url("admin/jx_orders_status_summary"); ?>";
+                var type='all';   //$('#franchise_ord_list_frm').attr('action')
+                
+                
                 
                 $('.tab_list .selected').removeClass('selected');
-		$('.tab_list .'+fil_ordersby).addClass('selected');
+		$('.tab_list #'+type).addClass('selected');
                 
-                $('.orders_status_summary_div').html("Loading...");
+                $('.orders_status_summary_div').html("1. Loading...");
 
+                
+                
+                //2. date
                 var date_from=$( "#date_from").val();
                 var date_to=$( "#date_to").val();
+                $("table").data("sdata", { type:'all',date_from:date_from,date_to:date_to, issorting : "no",idname:'',classname:'',firstrun:'true',pagination:"false",url:url });
+                
                 //pagination:
                 
                 //var indata=$("#ord_list_frm").serialize()+"&type="+type;
-                var indata="/"+fil_ordersby+"/"+date_from+"/"+date_to+"/0"+"/25";
+                var indata="/"+fil_ordersby+"/"+date_from+"/"+date_to+"";
                 
                 
-                print(ajax_url+indata);
+                print(url+indata);
                 
-                $.post(ajax_url+indata,success)
+                $.post(url+indata,success)
                 .done(done)
                 .fail(fail);
            }
@@ -320,6 +478,29 @@ filter("");
 /*PAGINATION*/
 .orders_pagination {
     float: left;
+}
+.all_pop, .shipped_pop, .unshipped_pop, .cancelled_pop {
+    font-size:11px;
+    text-align: center;
+    float: right;
+    border-radius: 4px 4px;
+    padding: 2px 2px;
+}
+.all_pop {
+    margin-top: -40px;
+}
+.shipped_pop {
+    margin-top: -40px;
+}
+.unshipped_pop {
+     margin-top: -40px;
+}
+.cancelled_pop {
+     margin-top: -40px;
+}
+.popbg{
+    color: #ffffff;
+    background-color: #78201C;
 }
 </style>	
 
