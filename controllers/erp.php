@@ -1691,6 +1691,8 @@ class Erp extends Voucher
 		$r_orders=$this->db->query("select ti.territory_name,ti.id as territory_id,m.name as menu_name,d.menuid,f.franchise_id,f.franchise_name,t.amount,p.brand_id,p.product_id,o.time,o.transid,i.name as deal,i.id as itemid,p.product_name,sum(s.available_qty) as stock,i.price from king_orders o join king_dealitems i on i.id=o.itemid join king_deals d on d.dealid = i.dealid join king_transactions t on t.transid=o.transid left outer join m_product_deal_link l on l.itemid=i.id left outer join products_group_orders po on po.order_id=o.id left outer join m_product_info p on p.product_id=ifnull(l.product_id,po.product_id) left outer join t_stock_info s on s.product_id=ifnull(p.product_id,po.product_id) left join pnh_m_franchise_info f on f.franchise_id = t.franchise_id left join pnh_menu m on m.id = d.menuid and t.is_pnh = 1 left join pnh_m_territory_info ti on ti.id = f.territory_id where o.time between $from and $to group by o.transid,p.product_id order by o.time desc")->result_array();
 		$data['pnh_menu'] = $this->db->query("select * from pnh_menu order by name")->result_array();
 		$data['pnh_terr'] = $this->db->query("select * from pnh_m_territory_info order by territory_name")->result_array();
+		$data['pnh_towns'] = $this->db->query("select id,town_name from pnh_towns order by town_name")->result_array();
+                
 		$order=array();
 		$deal=array();
 		foreach($r_orders as $o)
@@ -1710,21 +1712,12 @@ class Erp extends Voucher
 		$data['deal']=$deal;
 		$data['page']="orders_status_summary";
 		$this->load->view("admin",$data);
-                /*
-                $user=$this->auth(PNH_EXECUTIVE_ROLE|CALLCENTER_ROLE);
-		$data['frans']=$this->erpm->pnh_getfranchises();
-		$data['suspended_frans_ttl']=$this->db->query("select count(*) as t from pnh_m_franchise_info where is_suspended = 1 ")->row()->t;
-		$data['page']="pnh_franchises";
-		$this->load->view("admin",$data);
-                */
-                
-                
 	}
         
         /*
          * Dispay order list by status
          */
-	function jx_orders_status_summary($type,$date_from,$date_to,$pg=0,$limit=25) {
+	function jx_orders_status_summary($type,$date_from,$date_to,$terrid,$townid,$franchiseid,$pg=0,$limit=25) {
             
             $this->erpm->auth();
             //$type = $this->input->post('type');
@@ -1732,10 +1725,14 @@ class Erp extends Voucher
             $en_ts = strtotime($date_to.' 23:59:59');
 
             $data['type']=$type;
-            $data['pg']=$pg;
-            $data['limit']=$limit;
             $data['st_ts']=$st_ts;
             $data['en_ts']=$en_ts;
+            $data['terrid']=$terrid;
+            $data['townid']=$townid;
+            $data['franchiseid']=$franchiseid;
+            $data['pg']=$pg;
+            $data['limit']=$limit;
+            
             
 //            print_r($data);die();
             $this->load->view("admin/body/jx_orderstatus_summary",$data);
@@ -1775,9 +1772,10 @@ class Erp extends Voucher
             $this->erpm->auth();
             // echo json_encode(array("status"=>"success","franchise"=>"$terrid,$townid"));
             $output = array();
+            $sql_terr =($terrid!=00) ? " territory_id = $terrid and " : "";
             // populate all towns in territory 
-            $franchise_list_res = $this->db->query("select franchise_id,franchise_name from pnh_m_franchise_info where territory_id = ? and town_id = ? order by franchise_name ",array($terrid,$townid));
-            if($franchise_list_res->num_rows() and $terrid != '00' and $townid != '00')
+            $franchise_list_res = $this->db->query("select franchise_id,franchise_name from pnh_m_franchise_info where $sql_terr town_id = ? order by franchise_name ",array($townid));
+            if($franchise_list_res->num_rows() and $townid != '00')
             {
                 $output['status'] = 'success';
                 $output['franchise'] = json_encode($franchise_list_res->result_array());
