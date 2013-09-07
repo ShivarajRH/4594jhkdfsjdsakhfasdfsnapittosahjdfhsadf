@@ -1692,6 +1692,16 @@ class Erp extends Voucher
 		$data['pnh_menu'] = $this->db->query("select * from pnh_menu order by name")->result_array();
 		$data['pnh_terr'] = $this->db->query("select * from pnh_m_territory_info order by territory_name")->result_array();
 		$data['pnh_towns'] = $this->db->query("select id,town_name from pnh_towns order by town_name")->result_array();
+		$data['pnh_menu'] = $this->db->query("select mn.id,mn.name from pnh_menu mn
+                                                            join king_deals deal on deal.menuid=mn.id
+                                                            where mn.status=1 
+                                                            group by mn.id
+                                                            order by mn.name")->result_array();
+                
+		$data['pnh_brands'] = $this->db->query("select br.id,br.name from king_brands br
+                                            join king_orders o on o.brandid=br.id
+                                            group by br.id
+                                            order by br.name")->result_array();
                 
 		$order=array();
 		$deal=array();
@@ -1717,9 +1727,10 @@ class Erp extends Voucher
         /*
          * Dispay order list by status
          */
-	function jx_orders_status_summary($type,$date_from,$date_to,$terrid,$townid,$franchiseid,$pg=0,$limit=25) {
+	function jx_orders_status_summary($type,$date_from,$date_to,$terrid,$townid,$franchiseid,$menuid,$brandid,$pg=0,$limit=25) {
+            $this->load->model('erpmodel','erpm');
             
-            $this->erpm->auth();
+            $this->erpm->auth(CALLCENTER_ROLE);
             //$type = $this->input->post('type');
             $st_ts = strtotime($date_from.' 00:00:00');
             $en_ts = strtotime($date_to.' 23:59:59');
@@ -1730,6 +1741,8 @@ class Erp extends Voucher
             $data['terrid']=$terrid;
             $data['townid']=$townid;
             $data['franchiseid']=$franchiseid;
+            $data['menuid']=$menuid;
+            $data['brandid']=$brandid;
             $data['pg']=$pg;
             $data['limit']=$limit;
             
@@ -1738,14 +1751,34 @@ class Erp extends Voucher
             $this->load->view("admin/body/jx_orderstatus_summary",$data);
 
         }
-        
+        /*
+         * function to pull brands of selected menuid
+         * @param type $menuid
+         */
+        function jx_get_brandsbymenuid($menuid) {
+            $this->erpm->auth(CALLCENTER_ROLE);
+            
+            $output = array();
+            // populate all towns in territory 
+            $brands_list_res = $this->db->query("select br.id,br.name from king_brands br join king_deals deal on deal.brandid=br.id join king_orders o on o.id=deal.dealid where deal.menuid= ? order by br.name ",$terrid);
+            if($brands_list_res->num_rows())
+            {
+                $output['status'] = 'success';
+                $output['brands'] = json_encode($brands_list_res->result_array());
+            }else
+            {
+                $output['status'] = 'error';
+                $output['message'] = 'No towns for territory';
+            }
+            echo json_encode($output);
+        }
         /**
          * function to generate town list by territoryid 
          * @param type $townid
          */
         function jx_suggest_townbyterrid($terrid)
         {
-            $this->erpm->auth();
+            $this->erpm->auth(CALLCENTER_ROLE);
             
             $output = array();
             // populate all towns in territory 
@@ -1769,7 +1802,7 @@ class Erp extends Voucher
         function jx_suggest_fran($terrid=0,$townid=0)
         {
             // populate all franchise in town 
-            $this->erpm->auth();
+            $this->erpm->auth(CALLCENTER_ROLE);
             // echo json_encode(array("status"=>"success","franchise"=>"$terrid,$townid"));
             $output = array();
             $sql_terr =($terrid!=00) ? " territory_id = $terrid and " : "";
@@ -12868,7 +12901,7 @@ class Erp extends Voucher
 	
 	function product_order_summary()
 	{
-		$this->load->model('erpmodel','erpm');
+		
 		$this->erpm->auth(DEAL_MANAGER_ROLE);
 		$sql = "select catid,c.name as catname,brand_id,b.name as brandname,product_id,product_name,sum(ttl_req_qty) as ttl_req_qty,mrp 
 			from 

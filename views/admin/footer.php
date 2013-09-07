@@ -23,12 +23,6 @@ background-color:#fff;
 }
 </style>
 <script type="text/javascript">
-    $(document).ready(function(){ 
-        //Smooth scrolling
-        $(window).scroll(function(){
-            if ($(this).scrollTop() > 100) {$('.scrollup').fadeIn();} 
-            else { $('.scrollup').fadeOut(); }
-        });
-         $('.scrollup').click(function(){ $("html, body").animate({ scrollTop: 0 }, 1000); return false; });
-     });
+    $(window).scroll(function(){if ($(this).scrollTop() > 100) {$('.scrollup').fadeIn();} else { $('.scrollup').fadeOut(); }});
+     $('.scrollup').click(function(){ $("html, body").animate({ scrollTop: 0 }, 1000); return false; });
 </script>

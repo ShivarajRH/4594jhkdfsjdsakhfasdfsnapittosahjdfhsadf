@@ -1001,3 +1001,33 @@ padding:10px;
     background: url('../images/icon_top.png') no-repeat;
 }
 .loading { background-image:url("http://static.snapittoday.com/loading_maroon.gif");  background-repeat: no-repeat; float: left; margin-left: 20px;width: 20px; visibility:hidden; }
+/* Sep_06_2013 */
+
+/*PAGINATION*/
+.orders_status_pagination {
+    float: right;
+    font-size: 23px;
+    margin: 6px 40px 6px 0;
+}
+.ttl_orders_status_listed {
+    margin:0 2px;
+    font-weight: bold;text-align: center;font-size: 1.17em;float: left;
+}
+.c2 {
+    margin:0 2px 0 540px;
+    font-weight: bold;text-align: center;font-size: 1.17em;float: left;
+}
+.all_pop, .shipped_pop, .unshipped_pop, .cancelled_pop, .removed_pop {
+    font-size:11px;
+    text-align: center;
+    float: right;
+    border-radius: 10px 10px;
+    padding: 5px 5px;
+}
+.all_pop {margin-top: -40px;}
+.shipped_pop {margin-top: -40px;}
+.unshipped_pop {margin-top: -40px;}
+.cancelled_pop {margin-top: -40px;}
+.removed_pop {margin-top: -40px;}
+
+.popbg{color: #ffffff;background-color: #78201C;}

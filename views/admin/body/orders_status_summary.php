@@ -1,19 +1,19 @@
 <div class="container">
     <div class="">
         <form>
-            <select id="sel_territory" >
+            <select id="sel_territory" name="sel_territory" >
                 <option value="00">All Territory</option>
                 <?php foreach($pnh_terr as $terr):?>
                         <option value="<?php echo $terr['id'];?>"><?php echo $terr['territory_name'];?></option>
                 <?php endforeach;  ?>
             </select>
-            <select id="sel_town">
+            <select id="sel_town" name="sel_town">
                 <option value="00">All Towns</option>
                 <?php foreach($pnh_towns as $town): ?>
                         <option value="<?php echo $town['id'];?>"><?php echo $town['town_name'];?></option>
                 <?php endforeach; ?>
             </select>
-            <select id="sel_franchise">
+            <select id="sel_franchise" name="sel_franchise">
                 <option value="00">All Franchise</option>
             </select>
         </form>
@@ -41,13 +41,29 @@
                                                     <input type="hidden" value="all" name="type" name="type">
                                                     <b>Show Orders </b> :
                                                     From :<input type="text" style="width: 90px;" id="date_from"
-                                                            name="date_from" value="<?php echo date('Y-m-01',time())?>" />
+                                                            name="date_from" value="<?php echo date('Y-m-d',time()-60*60*24*180)?>" />
                                                     To :<input type="text" style="width: 90px;" id="date_to"
                                                             name="date_to" value="<?php echo date('Y-m-d',time())?>" /> 
                                                     <input type="submit" value="Submit">
                                             </form>
                                     </div>
                             </td>
+                    </tr>
+                    <tr>
+                        <td><select id="sel_menu" name="sel_menu" colspan="2">
+                                <option value="00">Select Menu</option>
+                                 <?php foreach($pnh_menu as $menu): ?>
+                                        <option value="<?php echo $town['id'];?>"><?php echo $menu['name'];?></option>
+                                <?php endforeach; ?>
+                            </select> &nbsp;
+                            <select id="sel_brands" name="sel_brands">
+                                <option value="00">Select Brands</option>
+                                 <?php foreach($pnh_brands as $brand): ?>
+                                        <option value="<?php echo $brand['id'];?>"><?php echo $brand['name'];?></option>
+                                <?php endforeach; ?>
+                                
+                            </select>
+                        </td>
                     </tr>
                     <tr>
                             <td colspan="2" align="left">
@@ -61,6 +77,14 @@
     
 </div>
 
+
+<div id="inv_transitlogdet_dlg" title="Shipment Transit Log">
+	<h3 style="margin:3px 0px;"></h3>
+	<div id="inv_transitlogdet_tbl">
+		
+	</div>
+</div>
+
 <script>
 $(function(){ $("#from,#to").datepicker();});
 function date_range()
@@ -72,6 +96,28 @@ function date_range()
 
 <script>
     //ENTRY 7
+    $("#sel_menu").live("change",function() {
+            var menuid=$(this).find(":selected").val();//text();
+            
+            var url="<?php echo site_url("admin/jx_get_brandsbymenuid"); ?>"+"/"+menuid;
+            $.post(url,function(resp) {
+                    if(resp.status=='success') {
+                         var obj = jQuery.parseJSON(resp.brands);
+                        $("#sel_brands").html(objToOptions_brands(obj));
+                    }
+                    else {
+                        $("#sel_brands").val($("#sel_brands option:nth-child(0)").val());
+                        //$(".sel_status").html(resp.message);
+                    }
+                },'json').done(done).fail(fail);
+
+        loadTableData(0);
+        return false;
+    });
+    $("#sel_brands").live("change",function() {
+        loadTableData(0);
+        return false;
+    });
     $("#sel_franchise").live("change",function() {
         loadTableData(0);
         return false;
@@ -83,7 +129,7 @@ function date_range()
         var terrid=$("#sel_territory").find(":selected").val();//text();
         var url="<?php echo site_url("admin/jx_suggest_fran"); ?>"+"/"+terrid+"/"+townid;
         $.post(url,function(resp) {
-            if(resp.status=='success') {
+                if(resp.status=='success') {
                      var obj = jQuery.parseJSON(resp.franchise);
                     $("#sel_franchise").html(objToOptions_franchise(obj));
                 }
@@ -107,7 +153,7 @@ function date_range()
         var url="<?php echo site_url("admin/jx_suggest_townbyterrid"); ?>/"+terrid;//  alert(url);
         $.post(url,function(resp) {
             if(resp.status=='success') {
-                 print(resp.towns);
+                 //print(resp.towns);
                  var obj = jQuery.parseJSON(resp.towns);
                 $("#sel_town").html(objToOptions_terr(obj));
             }
@@ -142,10 +188,11 @@ function date_range()
          var terrid= ($("#sel_territory").val()=='00')?0:$("#sel_territory").val();
          var townid=($("#sel_town").val()=='00')?0:$("#sel_town").val();
          var franchiseid=($("#sel_franchise").val()=='00')?0:$("#sel_franchise").val();
-
-         //$("table").data("sdata", { terrid :terrid,townid:townid, franchiseid:franchiseid, type:type,date_from:date_from,date_to:date_to, issorting : "no",idname:'',classname:'',firstrun:'true',pagination:"false",url:url });
+         var menuid=($("#sel_menu").val()=='00')?0:$("#sel_menu").val();
+         var brandid=($("#sel_brands").val()=='00')?0:$("#sel_brands").val();
+         
          $('.orders_status_summary_div').html("Loading...");
-         $.post(site_url+"/admin/jx_orders_status_summary"+"/"+type+"/"+date_from+"/"+date_to+'/'+terrid+'/'+townid+'/'+franchiseid+'/'+pg,{},function(resp){
+         $.post(site_url+"/admin/jx_orders_status_summary"+"/"+type+"/"+date_from+"/"+date_to+'/'+terrid+'/'+townid+'/'+franchiseid+'/'+menuid+'/'+brandid+'/'+pg,{},function(resp){
             $('.orders_status_summary_div').html(resp);
          });
     }
@@ -167,15 +214,16 @@ function date_range()
     }
        
     //ENTRY 4
-    $(document).ready(function() {    
+    $(document).ready(function() {
         //FIRST RUN
-        var reg_date = "<?php echo date('m/d/Y',  time());?>";
+        var reg_date = "<?php echo date('m/d/Y',  time()*60*60*24);?>";
+        
         $( "#date_from").datepicker({
              changeMonth: true,
              dateFormat:'yy-mm-dd',
              numberOfMonths: 1,
              maxDate:0,
-             //minDate: new Date(reg_date),
+             minDate: new Date(reg_date),
                onClose: function( selectedDate ) {
                  $( "#date_to" ).datepicker( "option", "minDate", selectedDate ); //selectedDate
              }
@@ -183,7 +231,7 @@ function date_range()
         $( "#date_to" ).datepicker({
             changeMonth: true,
              dateFormat:'yy-mm-dd',
-             numberOfMonths: 1,
+//             numberOfMonths: 1,
              maxDate:0,
              onClose: function( selectedDate ) {
                $( "#date_from" ).datepicker( "option", "maxDate", selectedDate );
@@ -191,10 +239,19 @@ function date_range()
         });
 
         prepare_daterange('date_from','date_to');
-
-         loadTableData(0);
+        loadTableData(0);
     
     });
+    function objToOptions_brands(obj) {
+        var output='';
+            output += "<option value='00' selected>All Brands</option>\n";
+        $.each(obj,function(key,elt){
+            if(obj.hasOwnProperty(key)) {
+                output += "<option value='"+elt.id+"'>"+elt.name+"</option>\n";
+            }
+        });
+        return(output);
+    }
     function objToOptions_terr(obj) {
         var output='';
             output += "<option value='00' selected>All Towns</option>\n";
@@ -218,39 +275,37 @@ function date_range()
     
   
 </script>
-<style>
+<style type="text/css">
 .leftcont {        display: none;    }
 select {    margin: 15px 0 15px 5px; }
 .datagrid1 {border-collapse: collapse;border:none !important}
 .datagrid1 th{border:none !important;font-size: 12px;padding:0px 0px;}
 .datagrid1 td{border-right:none;border-left:none;border-bottom:1px dotted #ccc;font-size: 12px;}
 .datagrid1 td a{text-transform: capitalize}
-	#franchise_order_list_wrapper .tab_list{
-		clear:both;
-		display: block;
-                
-	}
-	#franchise_order_list_wrapper .tab_list ol{
-		padding-left:0px;
-	}
-	#franchise_order_list_wrapper .tab_list li{
-		display: inline-block;
-	}
-	#franchise_order_list_wrapper .tab_list li a{
-		display: block;
-		background: #efefef;
-		padding:5px 34px;
-		font-size: 15px;
-		color: #454545;
-		cursor:pointer;
+        #franchise_order_list_wrapper .tab_list{
+                clear:both;
+                display: block;
+
+        }
+        #franchise_order_list_wrapper .tab_list ol{
+                padding-left:0px;
+        }
+        #franchise_order_list_wrapper .tab_list li{
+                display: inline-block;
+        }
+        #franchise_order_list_wrapper .tab_list li a{
+                display: block;
+                background: #efefef;
+                padding:5px 34px;
+                font-size: 15px;
+                color: #454545;
+                cursor:pointer;
                 font-weight: bold;
-	}
-	#franchise_order_list_wrapper .tab_list li a.selected{
-		background: #555;
-		color: #fff;
-	}
-
-
+        }
+        #franchise_order_list_wrapper .tab_list li a.selected{
+                background: #555;
+                color: #fff;
+        }
 .transit_link{
 	border-radius:5px;
 	background:#96C5E0;
@@ -264,54 +319,51 @@ select {    margin: 15px 0 15px 5px; }
 	text-decoration:none;
 }
 
-.datagrid th{padding:12px 7px}
+.datagrid th{padding:8px 7px}
 .datagrid1 {border-collapse: collapse;border:none !important}
 .datagrid1 th{border:none !important;font-size: 13px;padding:0px 0px;}
 .datagrid1 td{border-right:none;border-left:none;border-bottom:none;font-size: 12px;padding:2px;color: #444;text-transform: capitalize}
 .datagrid1 td a{text-transform: capitalize}
 .datagrid1 td b{font-weight: bold;font-size: 11px;}
-
-/*PAGINATION*/
-.orders_status_pagination {
-    float: right;
-    font-size: 16px;
-    margin: 6px 40px 6px 0;
-}
-.ttl_orders_status_listed {
-    margin:0 2px;
-    font-weight: bold;text-align: center;font-size: 1.17em;float: left;
-}
-.c2 {
-    margin:0 2px 0 540px;
-    font-weight: bold;text-align: center;font-size: 1.17em;float: left;
-}
-.all_pop, .shipped_pop, .unshipped_pop, .cancelled_pop, .removed_pop {
-    font-size:11px;
-    text-align: center;
-    float: right;
-    border-radius: 10px 10px;
-    padding: 5px 5px;
-}
-.all_pop {
-    margin-top: -40px;
-}
-.shipped_pop {
-    margin-top: -40px;
-}
-.unshipped_pop {
-     margin-top: -40px;
-}
-.cancelled_pop {
-     margin-top: -40px;
-}
-.removed_pop {
-     margin-top: -40px;
-}
-.popbg{
-    color: #ffffff;
-    background-color: #78201C;
-}
 </style>	
 
+<script type="text/javascript">
+function get_invoicetransit_log(ele,invno) {
+	$('#inv_transitlogdet_dlg').data({'invno':invno}).dialog('open');
+        return false;
+}
 
-<?php
+var refcont = null;
+$('#inv_transitlogdet_dlg').dialog({width:'900',height:'auto',autoOpen:false,modal:true,
+                open:function(){
+
+
+                        //,'width':refcont.width()
+                        //$('div[aria-describedby="inv_transitlogdet_dlg"]').css({'top':(refcont.offset().top+15+refcont.height())+'px','left':refcont.offset().left});
+
+                        $('#inv_transitlogdet_tbl').html('loading...');
+                        $.post(site_url+'/admin/jx_invoicetransit_det','invno='+$(this).data('invno'),function(resp){
+                                if(resp.status == 'error')
+                                {
+                                        alert(resp.error);
+                                }else
+                                {
+                                        var inv_transitlog_html = '<table class="datagrid" width="100%"><thead><th width="30%">Msg</th><th width="10%">Status</th><th width="10%">Handle By</th><th width="10%">Logged On</th><th width="15%">SMS</th></thead><tbody>';
+                                        $.each(resp.transit_log,function(i,log){
+                                                inv_transitlog_html += '<tr><td>'+log[5]+'</td><td>'+log[1]+'</td><td>'+log[2]+'('+log[4]+')</td><td>'+log[3]+'</td><td>'+log[6]+'</td></tr>';
+                                        });
+                                        inv_transitlog_html += '</tbody></table>';
+                                        $('#inv_transitlogdet_tbl').html(inv_transitlog_html);
+
+                                        $('#inv_transitlogdet_dlg h3').html('Invoice no :<span style="color:blue;font-size:12px">'+resp.invoice_no+'</span>  Franchise name: <span style="color:orange;font-size:12px">'+resp.Franchise_name +'</span> Town : <span style="color:gray;font-size:12px">'+resp.town_name+'</span>'+' ManifestoNo :'+resp.manifesto_id);
+
+
+
+
+                                }
+                        },'json');
+                }
+});
+</script>
+
+    <?php
